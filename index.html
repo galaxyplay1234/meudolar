@@ -180,21 +180,21 @@
     </div>
 
     <script>
-        // ==============================================
-        // 🔧 CONFIGURAÇÃO DO FIREBASE - COLOQUE SUAS INFOS AQUI
-        // ==============================================
-        const firebaseConfig = {
-            apiKey: "COLOQUE_SUA_API_KEY_AQUI",
-            authDomain: "SEU_PROJETO.firebaseapp.com",
-            projectId: "SEU_PROJETO",
-            storageBucket: "SEU_PROJETO.appspot.com",
-            messagingSenderId: "SEU_NUMERO",
-            appId: "SEU_APP_ID"
-        };
+        //// ==============================================
+// 🔧 CONFIGURAÇÃO DO FIREBASE - JÁ PREENCHI SEUS DADOS!
+// ==============================================
+const firebaseConfig = {
+    apiKey: "AIzaSyDwyIKkuKQpGzcmEdfd306-RztHfNjGKb4",
+    authDomain: "meudolar-5e1bb.firebaseapp.com",
+    projectId: "meudolar-5e1bb",
+    storageBucket: "meudolar-5e1bb.firebasestorage.app",
+    messagingSenderId: "306212390482",
+    appId: "1:306212390482:web:5e6cfe205e374672dc418b"
+};
 
-        // Inicializa Firebase
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
+// Inicializa Firebase
+const app = firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
 
         // Categorias por tipo
         const categorias = {
