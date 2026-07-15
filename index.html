@@ -40,7 +40,7 @@
         }
         html, body { overscroll-behavior: none; touch-action: pan-x pan-y; }
 
-        /* ESCONDE O CAMPO NATIVO MAS MANTEM FUNCIONAL */
+        /* CAMPO DATA PERSONALIZADO */
         .campo-data-wrapper { position: relative; }
         .campo-data-wrapper input[type="date"] {
             position: absolute;
@@ -52,7 +52,6 @@
             cursor: pointer;
             z-index: 2;
         }
-        /* CAMPO VISUAL ALINHADO À ESQUERDA */
         .data-visual {
             pointer-events: none;
             text-align: left !important;
@@ -127,7 +126,7 @@
 
                     <div class="mb-4">
                         <label class="block text-sm font-medium text-gray-600 mb-1">Valor (R$)</label>
-                        <input type="number" step="0.01" min="0.01" id="valor" class="w-full border border-gray-200 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-primary/40" required>
+                        <input type="text" id="valor" class="w-full border border-gray-200 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-primary/40" placeholder="0,00" required oninput="mascaraValor(this)">
                     </div>
 
                     <div class="mb-4">
@@ -135,7 +134,7 @@
                         <input type="text" id="descricao" class="w-full border border-gray-200 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-primary/40" required>
                     </div>
 
-                    <!-- CAMPO DATA PERSONALIZADO - AGORA VAI FICAR CERTO! -->
+                    <!-- CAMPO DATA -->
                     <div class="mb-4">
                         <label class="block text-sm font-medium text-gray-600 mb-1">Data</label>
                         <div class="campo-data-wrapper w-full border border-gray-200 rounded-xl p-3 focus-within:ring-2 focus-within:ring-primary/40 relative">
@@ -219,7 +218,33 @@ const categorias = {
 
 let listaTransacoesGlobal = [];
 
-// ATUALIZA O TEXTO VISUAL DA DATA
+// ==============================================
+// ✅ FUNÇÕES DE FORMATAÇÃO DE VALORES
+// ==============================================
+
+// Máscara enquanto digita: 1500 vira 1.500,00
+function mascaraValor(campo) {
+    let valor = campo.value.replace(/\D/g, '');
+    valor = (valor / 100).toFixed(2) + '';
+    valor = valor.replace('.', ',');
+    valor = valor.replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1.');
+    campo.value = valor;
+}
+
+// Converte valor formatado para número (salvar no Firebase)
+function valorParaNumero(valorStr) {
+    return parseFloat(valorStr.replace(/\./g, '').replace(',', '.'));
+}
+
+// Formata número para visualização padrão: 1567.9 → 1.567,90
+function formatarValor(valor) {
+    return valor.toLocaleString('pt-BR', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    });
+}
+
+// ATUALIZA DATA VISUAL
 function atualizarDataVisual(campo) {
     const visual = document.getElementById('dataVisual');
     if (campo.value) {
@@ -252,6 +277,7 @@ function abrirModal(tipo) {
     const hoje = new Date().toISOString().split('T')[0];
     document.getElementById('data').value = hoje;
     atualizarDataVisual(document.getElementById('data'));
+    document.getElementById('valor').value = '';
 
     const select = document.getElementById('categoria');
     select.innerHTML = '<option value="">Selecione</option>';
@@ -272,7 +298,8 @@ function abrirEdicao(id) {
     document.getElementById('btnExcluir').classList.remove('hidden');
     document.getElementById('btnSalvar').textContent = 'Atualizar';
 
-    document.getElementById('valor').value = t.valor;
+    // Preenche valor já formatado
+    document.getElementById('valor').value = formatarValor(t.valor);
     document.getElementById('descricao').value = t.descricao;
 
     const dataParts = t.data.split('/');
@@ -303,7 +330,7 @@ async function salvarTransacao(e) {
     e.preventDefault();
     
     const tipo = document.getElementById('tipoTransacao').value;
-    const valor = parseFloat(document.getElementById('valor').value);
+    const valor = valorParaNumero(document.getElementById('valor').value);
     const descricao = document.getElementById('descricao').value;
     const dataInput = document.getElementById('data').value;
     const dataFormatada = dataInput.split('-').reverse().join('/');
@@ -349,9 +376,10 @@ function atualizarDados(transacoes) {
     transacoes.forEach(t => t.tipo === 'receita' ? totalReceitas += t.valor : totalDespesas += t.valor);
     const saldo = totalReceitas - totalDespesas;
 
-    document.getElementById('totalReceitas').textContent = `R$ ${totalReceitas.toFixed(2).replace('.', ',')}`;
-    document.getElementById('totalDespesas').textContent = `R$ ${totalDespesas.toFixed(2).replace('.', ',')}`;
-    document.getElementById('saldoTotal').textContent = saldo.toFixed(2).replace('.', ',');
+    // TODOS OS VALORES FORMATADOS PADRÃO BRASILEIRO
+    document.getElementById('totalReceitas').textContent = `R$ ${formatarValor(totalReceitas)}`;
+    document.getElementById('totalDespesas').textContent = `R$ ${formatarValor(totalDespesas)}`;
+    document.getElementById('saldoTotal').textContent = formatarValor(saldo);
 
     atualizarLista(transacoes);
 }
@@ -382,7 +410,7 @@ function atualizarLista(transacoes) {
                     </div>
                 </div>
                 <div class="text-right">
-                    <p class="font-semibold ${cor}">R$ ${t.valor.toFixed(2).replace('.', ',')}</p>
+                    <p class="font-semibold ${cor}">R$ ${formatarValor(t.valor)}</p>
                 </div>
             </div>`;
     });
