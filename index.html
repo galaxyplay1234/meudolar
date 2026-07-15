@@ -3,9 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Controle Financeiro</title>
+    <title>Controle Financeiro + WhatsApp</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+
     <script>
         tailwind.config = {
             theme: {
@@ -16,7 +21,8 @@
                         danger: '#F53F3F',
                         dark: '#1E2129',
                         gray: '#86909C',
-                        light: '#F2F3F5'
+                        light: '#F2F3F5',
+                        whatsapp: '#25D366'
                     },
                     fontFamily: {
                         inter: ['Inter', 'system-ui', 'sans-serif'],
@@ -57,7 +63,9 @@
         <header class="bg-primary text-white px-6 pt-8 pb-6 rounded-b-3xl">
             <div class="flex justify-between items-center mb-6">
                 <h1 class="text-xl font-bold">Minhas Finanças</h1>
-                <button class="text-xl"><i class="fa fa-bell-o"></i></button>
+                <button onclick="abrirModalWhatsapp()" class="text-xl bg-white/20 p-2 rounded-full">
+                    <i class="fa fa-whatsapp"></i>
+                </button>
             </div>
 
             <!-- Saldo Total -->
@@ -104,7 +112,7 @@
             </div>
         </div>
 
-        <!-- Modal de Cadastro -->
+        <!-- Modal de Cadastro Manual -->
         <div id="modalTransacao" class="fixed inset-0 bg-black/60 flex items-end justify-center z-50 hidden">
             <div class="bg-white rounded-t-3xl w-full max-w-md p-6 transform transition-transform duration-300">
                 <div class="flex justify-between items-center mb-5">
@@ -136,18 +144,81 @@
                 </form>
             </div>
         </div>
+
+        <!-- Modal Instruções WhatsApp -->
+        <div id="modalWhatsapp" class="fixed inset-0 bg-black/60 flex items-end justify-center z-50 hidden">
+            <div class="bg-white rounded-t-3xl w-full max-w-md p-6">
+                <div class="flex justify-between items-center mb-5">
+                    <h3 class="text-xl font-bold flex items-center gap-2">
+                        <i class="fa fa-whatsapp text-whatsapp"></i> Gastos via WhatsApp
+                    </h3>
+                    <button onclick="fecharModalWhatsapp()" class="text-gray-500 text-xl"><i class="fa fa-times"></i></button>
+                </div>
+
+                <div class="space-y-4 text-gray-600">
+                    <p class="text-sm">Envie mensagens para o seu número cadastrado e elas cairão automaticamente aqui!</p>
+                    
+                    <div class="bg-light p-4 rounded-xl">
+                        <p class="font-medium text-dark mb-2">📝 Como enviar:</p>
+                        <ul class="space-y-2 text-sm">
+                            <li>• <code class="bg-white px-2 rounded">50,90 padaria</code> → Despesa</li>
+                            <li>• <code class="bg-white px-2 rounded">+150 salário</code> → Receita</li>
+                            <li>• <code class="bg-white px-2 rounded">Recebi 2000 de frete</code> → Receita</li>
+                            <li>• <code class="bg-white px-2 rounded">Gastei 85,50 com supermercado</code> → Despesa</li>
+                        </ul>
+                    </div>
+
+                    <div class="bg-primary/5 p-4 rounded-xl text-sm">
+                        <p class="font-medium text-primary mb-1">🔧 Configuração:</p>
+                        <p>Após configurar o Firebase Functions e a API do WhatsApp, os dados chegam em tempo real!</p>
+                    </div>
+                </div>
+
+                <button onclick="fecharModalWhatsapp()" class="w-full bg-whatsapp hover:bg-whatsapp/90 text-white font-semibold rounded-xl p-3.5 mt-6 transition">Entendi</button>
+            </div>
+        </div>
     </div>
 
     <script>
+        // ==============================================
+        // 🔧 CONFIGURAÇÃO DO FIREBASE - COLOQUE SUAS INFOS AQUI
+        // ==============================================
+        const firebaseConfig = {
+            apiKey: "COLOQUE_SUA_API_KEY_AQUI",
+            authDomain: "SEU_PROJETO.firebaseapp.com",
+            projectId: "SEU_PROJETO",
+            storageBucket: "SEU_PROJETO.appspot.com",
+            messagingSenderId: "SEU_NUMERO",
+            appId: "SEU_APP_ID"
+        };
+
+        // Inicializa Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
         // Categorias por tipo
         const categorias = {
             receita: ['Salário', 'Vendas', 'Investimentos', 'Outros'],
             despesa: ['Alimentação', 'Moradia', 'Transporte', 'Lazer', 'Saúde', 'Educação', 'Outros']
         };
 
-        let transacoes = JSON.parse(localStorage.getItem('transacoes')) || [];
+        // ==============================================
+        // 🚀 FUNÇÕES PRINCIPAIS
+        // ==============================================
 
-        // Abrir modal
+        // Abrir modal WhatsApp
+        function abrirModalWhatsapp() {
+            document.getElementById('modalWhatsapp').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        // Fechar modal WhatsApp
+        function fecharModalWhatsapp() {
+            document.getElementById('modalWhatsapp').classList.add('hidden');
+            document.body.style.overflow = 'auto';
+        }
+
+        // Abrir modal cadastro
         function abrirModal(tipo) {
             document.getElementById('tipoTransacao').value = tipo;
             document.getElementById('tituloModal').textContent = tipo === 'receita' ? 'Nova Receita' : 'Nova Despesa';
@@ -162,35 +233,53 @@
             document.body.style.overflow = 'hidden';
         }
 
-        // Fechar modal
+        // Fechar modal cadastro
         function fecharModal() {
             document.getElementById('modalTransacao').classList.add('hidden');
             document.body.style.overflow = 'auto';
             document.getElementById('formTransacao').reset();
         }
 
-        // Salvar transação
-        function salvarTransacao(e) {
+        // Salvar transação manualmente no Firebase
+        async function salvarTransacao(e) {
             e.preventDefault();
             
-            const nova = {
-                id: Date.now(),
-                tipo: document.getElementById('tipoTransacao').value,
-                valor: parseFloat(document.getElementById('valor').value),
-                descricao: document.getElementById('descricao').value,
-                categoria: document.getElementById('categoria').value,
-                data: new Date().toLocaleDateString('pt-BR')
+            const tipo = document.getElementById('tipoTransacao').value;
+            const valor = parseFloat(document.getElementById('valor').value);
+            const descricao = document.getElementById('descricao').value;
+            const categoria = document.getElementById('categoria').value;
+
+            const novaTransacao = {
+                tipo: tipo,
+                valor: valor,
+                descricao: descricao,
+                categoria: categoria,
+                data: new Date().toLocaleDateString('pt-BR'),
+                origem: 'manual',
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
             };
 
-            transacoes.unshift(nova);
-            localStorage.setItem('transacoes', JSON.stringify(transacoes));
+            await db.collection('transacoes').add(novaTransacao);
             
             fecharModal();
-            atualizarDados();
         }
 
+        // ==============================================
+        // 🔄 ESCUTA DADOS EM TEMPO REAL (INCLUSIVE WHATSAPP)
+        // ==============================================
+        db.collection('transacoes')
+          .orderBy('createdAt', 'desc')
+          .limit(50)
+          .onSnapshot(snapshot => {
+              const transacoes = [];
+              snapshot.forEach(doc => {
+                  transacoes.push({ id: doc.id, ...doc.data() });
+              });
+              atualizarDados(transacoes);
+          });
+
         // Atualizar todos os valores
-        function atualizarDados() {
+        function atualizarDados(transacoes) {
             let totalReceitas = 0;
             let totalDespesas = 0;
 
@@ -205,11 +294,11 @@
             document.getElementById('totalDespesas').textContent = `R$ ${totalDespesas.toFixed(2).replace('.', ',')}`;
             document.getElementById('saldoTotal').textContent = saldo.toFixed(2).replace('.', ',');
 
-            atualizarLista();
+            atualizarLista(transacoes);
         }
 
         // Atualizar lista de transações
-        function atualizarLista() {
+        function atualizarLista(transacoes) {
             const lista = document.getElementById('listaTransacoes');
             
             if (transacoes.length === 0) {
@@ -225,6 +314,9 @@
             transacoes.forEach(t => {
                 const icone = t.tipo === 'receita' ? 'fa-arrow-up' : 'fa-arrow-down';
                 const cor = t.tipo === 'receita' ? 'text-success' : 'text-danger';
+                const origem = t.origem === 'whatsapp' 
+                    ? '<span class="text-xs text-whatsapp ml-2"><i class="fa fa-whatsapp"></i></span>' 
+                    : '';
 
                 lista.innerHTML += `
                     <div class="flex items-center justify-between bg-gray-50 p-4 rounded-xl">
@@ -233,7 +325,7 @@
                                 <i class="fa ${icone}"></i>
                             </div>
                             <div>
-                                <h4 class="font-medium">${t.descricao}</h4>
+                                <h4 class="font-medium">${t.descricao} ${origem}</h4>
                                 <p class="text-xs text-gray-500">${t.categoria} • ${t.data}</p>
                             </div>
                         </div>
@@ -244,13 +336,13 @@
             });
         }
 
-        // Fechar modal ao clicar fora
+        // Fechar modais ao clicar fora
         document.getElementById('modalTransacao').addEventListener('click', function(e) {
             if (e.target === this) fecharModal();
         });
-
-        // Carregar dados ao abrir
-        window.onload = atualizarDados;
+        document.getElementById('modalWhatsapp').addEventListener('click', function(e) {
+            if (e.target === this) fecharModalWhatsapp();
+        });
     </script>
 </body>
 </html>
