@@ -113,7 +113,7 @@
             </div>
         </div>
 
-        <!-- Modal de Cadastro Manual -->
+        <!-- Modal de Cadastro/Edição -->
         <div id="modalTransacao" class="fixed inset-0 bg-black/60 flex items-end justify-center z-50 hidden">
             <div class="bg-white rounded-t-3xl w-full max-w-md p-6 transform transition-transform duration-300">
                 <div class="flex justify-between items-center mb-5">
@@ -123,6 +123,7 @@
 
                 <form id="formTransacao" onsubmit="salvarTransacao(event)">
                     <input type="hidden" id="tipoTransacao" value="">
+                    <input type="hidden" id="idEdicao" value="">
 
                     <div class="mb-4">
                         <label class="block text-sm font-medium text-gray-600 mb-1">Valor (R$)</label>
@@ -136,7 +137,7 @@
 
                     <div class="mb-4">
                         <label class="block text-sm font-medium text-gray-600 mb-1">Data</label>
-                        <input type="date" id="data" class="w-full border border-gray-200 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-primary/40" required>
+                        <input type="date" id="data" class="w-full border border-gray-200 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-primary/40 text-left" required>
                     </div>
 
                     <div class="mb-4">
@@ -160,7 +161,12 @@
                         </div>
                     </div>
 
-                    <button type="submit" class="w-full bg-primary hover:bg-primary/90 text-white font-semibold rounded-xl p-3.5 transition">Salvar Transação</button>
+                    <div class="flex gap-3">
+                        <button type="button" id="btnExcluir" onclick="excluirTransacao()" class="hidden bg-danger/10 text-danger hover:bg-danger/20 font-semibold rounded-xl p-3.5 transition">
+                            <i class="fa fa-trash"></i>
+                        </button>
+                        <button type="submit" class="flex-1 bg-primary hover:bg-primary/90 text-white font-semibold rounded-xl p-3.5 transition">Salvar Alterações</button>
+                    </div>
                 </form>
             </div>
         </div>
@@ -238,10 +244,13 @@ const db = firebase.firestore();
             document.body.style.overflow = 'auto';
         }
 
-        // Abrir modal cadastro
+        // Abrir modal CADASTRO NOVO
         function abrirModal(tipo) {
             document.getElementById('tipoTransacao').value = tipo;
+            document.getElementById('idEdicao').value = '';
             document.getElementById('tituloModal').textContent = tipo === 'receita' ? 'Nova Receita' : 'Nova Despesa';
+            document.getElementById('btnExcluir').classList.add('hidden');
+            document.querySelector('button[type="submit"]').textContent = 'Salvar Transação';
             
             // Preenche data atual por padrão
             const hoje = new Date().toISOString().split('T')[0];
@@ -257,6 +266,36 @@ const db = firebase.firestore();
             document.body.style.overflow = 'hidden';
         }
 
+        // Abrir EDIÇÃO ao clicar na transação
+        async function abrirEdicao(id, transacao) {
+            document.getElementById('tipoTransacao').value = transacao.tipo;
+            document.getElementById('idEdicao').value = id;
+            document.getElementById('tituloModal').textContent = 'Editar Transação';
+            document.getElementById('btnExcluir').classList.remove('hidden');
+            document.querySelector('button[type="submit"]').textContent = 'Atualizar';
+
+            // Preenche os campos com dados existentes
+            document.getElementById('valor').value = transacao.valor;
+            document.getElementById('descricao').value = transacao.descricao;
+            
+            // Converte data dd/mm/aaaa para aaaa-mm-dd
+            const dataParts = transacao.data.split('/');
+            document.getElementById('data').value = `${dataParts[2]}-${dataParts[1]}-${dataParts[0]}`;
+
+            // Preenche categorias
+            const select = document.getElementById('categoria');
+            select.innerHTML = '<option value="">Selecione</option>';
+            categorias[transacao.tipo].forEach(cat => {
+                select.innerHTML += `<option value="${cat}" ${cat === transacao.categoria ? 'selected' : ''}>${cat}</option>`;
+            });
+
+            // Marca status correto
+            document.querySelector(`input[name="statusPagamento"][value="${transacao.status}"]`).checked = true;
+
+            document.getElementById('modalTransacao').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
         // Fechar modal cadastro
         function fecharModal() {
             document.getElementById('modalTransacao').classList.add('hidden');
@@ -264,7 +303,7 @@ const db = firebase.firestore();
             document.getElementById('formTransacao').reset();
         }
 
-        // Salvar transação manualmente no Firebase
+        // Salvar ou atualizar transação
         async function salvarTransacao(e) {
             e.preventDefault();
             
@@ -275,8 +314,9 @@ const db = firebase.firestore();
             const dataFormatada = dataInput.split('-').reverse().join('/');
             const categoria = document.getElementById('categoria').value;
             const status = document.querySelector('input[name="statusPagamento"]:checked').value;
+            const idEdicao = document.getElementById('idEdicao').value;
 
-            const novaTransacao = {
+            const dados = {
                 tipo: tipo,
                 valor: valor,
                 descricao: descricao,
@@ -284,16 +324,32 @@ const db = firebase.firestore();
                 categoria: categoria,
                 status: status,
                 origem: 'manual',
-                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
             };
 
-            await db.collection('transacoes').add(novaTransacao);
+            if (idEdicao) {
+                // ATUALIZA transação existente
+                await db.collection('transacoes').doc(idEdicao).update(dados);
+            } else {
+                // CRIA nova transação
+                dados.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+                await db.collection('transacoes').add(dados);
+            }
             
             fecharModal();
         }
 
+        // Excluir transação
+        async function excluirTransacao() {
+            const id = document.getElementById('idEdicao').value;
+            if (confirm('Tem certeza que deseja excluir esta transação?')) {
+                await db.collection('transacoes').doc(id).delete();
+                fecharModal();
+            }
+        }
+
         // ==============================================
-        // 🔄 ESCUTA DADOS EM TEMPO REAL (INCLUSIVE WHATSAPP)
+        // 🔄 ESCUTA DADOS EM TEMPO REAL
         // ==============================================
         db.collection('transacoes')
           .orderBy('createdAt', 'desc')
@@ -345,13 +401,13 @@ const db = firebase.firestore();
                 const origem = t.origem === 'whatsapp' 
                     ? '<span class="text-xs text-whatsapp ml-2"><i class="fa fa-whatsapp"></i></span>' 
                     : '';
-                // Indicador de status
                 const statusIcone = t.status === 'pago' 
                     ? '<span class="text-success text-xs ml-2" title="Pago"><i class="fa fa-check-circle"></i></span>' 
                     : '<span class="text-warning text-xs ml-2" title="Pendente"><i class="fa fa-clock-o"></i></span>';
 
                 lista.innerHTML += `
-                    <div class="flex items-center justify-between bg-gray-50 p-4 rounded-xl">
+                    <div onclick='abrirEdicao("${t.id}", ${JSON.stringify(t).replace(/'/g, "\\'")})' 
+                         class="flex items-center justify-between bg-gray-50 p-4 rounded-xl cursor-pointer hover:bg-gray-100 transition">
                         <div class="flex items-center gap-3">
                             <div class="w-10 h-10 rounded-full flex items-center justify-center ${cor} bg-opacity-10 bg-${cor.replace('text-', '')}/10">
                                 <i class="fa ${icone}"></i>
