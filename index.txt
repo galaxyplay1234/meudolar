@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Controle Financeiro + WhatsApp</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#165DFF',
+                        success: '#00B42A',
+                        danger: '#F53F3F',
+                        dark: '#1E2129',
+                        gray: '#86909C',
+                        light: '#F2F3F5',
+                        whatsapp: '#25D366'
+                    },
+                    fontFamily: {
+                        inter: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .no-select {
+                -webkit-user-select: none;
+                -moz-user-select: none;
+                -ms-user-select: none;
+                user-select: none;
+            }
+            .scrollbar-hide::-webkit-scrollbar {
+                display: none;
+            }
+            .scrollbar-hide {
+                -ms-overflow-style: none;
+                scrollbar-width: none;
+            }
+        }
+
+        html, body {
+            overscroll-behavior: none;
+            touch-action: pan-x pan-y;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 font-inter text-gray-800 no-select">
+    <div class="max-w-md mx-auto bg-white min-h-screen shadow-lg">
+        <!-- Cabeçalho -->
+        <header class="bg-primary text-white px-6 pt-8 pb-6 rounded-b-3xl">
+            <div class="flex justify-between items-center mb-6">
+                <h1 class="text-xl font-bold">Minhas Finanças</h1>
+                <button onclick="abrirModalWhatsapp()" class="text-xl bg-white/20 p-2 rounded-full">
+                    <i class="fa fa-whatsapp"></i>
+                </button>
+            </div>
+
+            <!-- Saldo Total -->
+            <div class="bg-white/15 backdrop-blur-sm rounded-2xl p-5">
+                <p class="text-white/80 text-sm">Saldo Total</p>
+                <h2 class="text-3xl font-bold mt-1">R$ <span id="saldoTotal">0,00</span></h2>
+                <div class="grid grid-cols-2 gap-4 mt-4">
+                    <div>
+                        <p class="text-white/80 text-xs">Receitas</p>
+                        <p class="text-lg font-semibold text-success" id="totalReceitas">R$ 0,00</p>
+                    </div>
+                    <div>
+                        <p class="text-white/80 text-xs">Despesas</p>
+                        <p class="text-lg font-semibold text-danger" id="totalDespesas">R$ 0,00</p>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Ações Rápidas -->
+        <div class="px-6 -mt-6">
+            <div class="grid grid-cols-2 gap-4">
+                <button onclick="abrirModal('receita')" class="bg-success text-white rounded-xl p-4 shadow-md flex items-center justify-center gap-2 font-medium">
+                    <i class="fa fa-plus-circle"></i> Nova Receita
+                </button>
+                <button onclick="abrirModal('despesa')" class="bg-danger text-white rounded-xl p-4 shadow-md flex items-center justify-center gap-2 font-medium">
+                    <i class="fa fa-minus-circle"></i> Nova Despesa
+                </button>
+            </div>
+        </div>
+
+        <!-- Lista de Transações -->
+        <div class="px-6 mt-8">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-semibold">Transações Recentes</h3>
+                <a href="#" class="text-primary text-sm font-medium">Ver Todas</a>
+            </div>
+
+            <div id="listaTransacoes" class="space-y-3 max-h-[450px] overflow-y-auto scrollbar-hide">
+                <div class="text-center text-gray-400 py-8">
+                    <i class="fa fa-list-alt text-4xl mb-2"></i>
+                    <p>Nenhuma transação cadastrada</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal de Cadastro Manual -->
+        <div id="modalTransacao" class="fixed inset-0 bg-black/60 flex items-end justify-center z-50 hidden">
+            <div class="bg-white rounded-t-3xl w-full max-w-md p-6 transform transition-transform duration-300">
+                <div class="flex justify-between items-center mb-5">
+                    <h3 id="tituloModal" class="text-xl font-bold">Nova Transação</h3>
+                    <button onclick="fecharModal()" class="text-gray-500 text-xl"><i class="fa fa-times"></i></button>
+                </div>
+
+                <form id="formTransacao" onsubmit="salvarTransacao(event)">
+                    <input type="hidden" id="tipoTransacao" value="">
+
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-600 mb-1">Valor (R$)</label>
+                        <input type="number" step="0.01" min="0.01" id="valor" class="w-full border border-gray-200 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-primary/40" placeholder="0,00" required>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-600 mb-1">Descrição</label>
+                        <input type="text" id="descricao" class="w-full border border-gray-200 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-primary/40" placeholder="Ex: Salário, Aluguel..." required>
+                    </div>
+
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-gray-600 mb-1">Categoria</label>
+                        <select id="categoria" class="w-full border border-gray-200 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-primary/40" required>
+                            <option value="">Selecione</option>
+                        </select>
+                    </div>
+
+                    <button type="submit" class="w-full bg-primary hover:bg-primary/90 text-white font-semibold rounded-xl p-3.5 transition">Salvar Transação</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Modal Instruções WhatsApp -->
+        <div id="modalWhatsapp" class="fixed inset-0 bg-black/60 flex items-end justify-center z-50 hidden">
+            <div class="bg-white rounded-t-3xl w-full max-w-md p-6">
+                <div class="flex justify-between items-center mb-5">
+                    <h3 class="text-xl font-bold flex items-center gap-2">
+                        <i class="fa fa-whatsapp text-whatsapp"></i> Gastos via WhatsApp
+                    </h3>
+                    <button onclick="fecharModalWhatsapp()" class="text-gray-500 text-xl"><i class="fa fa-times"></i></button>
+                </div>
+
+                <div class="space-y-4 text-gray-600">
+                    <p class="text-sm">Envie mensagens para o seu número cadastrado e elas cairão automaticamente aqui!</p>
+                    
+                    <div class="bg-light p-4 rounded-xl">
+                        <p class="font-medium text-dark mb-2">📝 Como enviar:</p>
+                        <ul class="space-y-2 text-sm">
+                            <li>• <code class="bg-white px-2 rounded">50,90 padaria</code> → Despesa</li>
+                            <li>• <code class="bg-white px-2 rounded">+150 salário</code> → Receita</li>
+                            <li>• <code class="bg-white px-2 rounded">Recebi 2000 de frete</code> → Receita</li>
+                            <li>• <code class="bg-white px-2 rounded">Gastei 85,50 com supermercado</code> → Despesa</li>
+                        </ul>
+                    </div>
+
+                    <div class="bg-primary/5 p-4 rounded-xl text-sm">
+                        <p class="font-medium text-primary mb-1">🔧 Configuração:</p>
+                        <p>Após configurar o Firebase Functions e a API do WhatsApp, os dados chegam em tempo real!</p>
+                    </div>
+                </div>
+
+                <button onclick="fecharModalWhatsapp()" class="w-full bg-whatsapp hover:bg-whatsapp/90 text-white font-semibold rounded-xl p-3.5 mt-6 transition">Entendi</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        //// ==============================================
+// 🔧 CONFIGURAÇÃO DO FIREBASE - JÁ PREENCHI SEUS DADOS!
+// ==============================================
+const firebaseConfig = {
+    apiKey: "AIzaSyDwyIKkuKQpGzcmEdfd306-RztHfNjGKb4",
+    authDomain: "meudolar-5e1bb.firebaseapp.com",
+    projectId: "meudolar-5e1bb",
+    storageBucket: "meudolar-5e1bb.firebasestorage.app",
+    messagingSenderId: "306212390482",
+    appId: "1:306212390482:web:5e6cfe205e374672dc418b"
+};
+
+// Inicializa Firebase
+const app = firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+        // Categorias por tipo
+        const categorias = {
+            receita: ['Salário', 'Vendas', 'Investimentos', 'Outros'],
+            despesa: ['Alimentação', 'Moradia', 'Transporte', 'Lazer', 'Saúde', 'Educação', 'Outros']
+        };
+
+        // ==============================================
+        // 🚀 FUNÇÕES PRINCIPAIS
+        // ==============================================
+
+        // Abrir modal WhatsApp
+        function abrirModalWhatsapp() {
+            document.getElementById('modalWhatsapp').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        // Fechar modal WhatsApp
+        function fecharModalWhatsapp() {
+            document.getElementById('modalWhatsapp').classList.add('hidden');
+            document.body.style.overflow = 'auto';
+        }
+
+        // Abrir modal cadastro
+        function abrirModal(tipo) {
+            document.getElementById('tipoTransacao').value = tipo;
+            document.getElementById('tituloModal').textContent = tipo === 'receita' ? 'Nova Receita' : 'Nova Despesa';
+            
+            const select = document.getElementById('categoria');
+            select.innerHTML = '<option value="">Selecione</option>';
+            categorias[tipo].forEach(cat => {
+                select.innerHTML += `<option value="${cat}">${cat}</option>`;
+            });
+
+            document.getElementById('modalTransacao').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        // Fechar modal cadastro
+        function fecharModal() {
+            document.getElementById('modalTransacao').classList.add('hidden');
+            document.body.style.overflow = 'auto';
+            document.getElementById('formTransacao').reset();
+        }
+
+        // Salvar transação manualmente no Firebase
+        async function salvarTransacao(e) {
+            e.preventDefault();
+            
+            const tipo = document.getElementById('tipoTransacao').value;
+            const valor = parseFloat(document.getElementById('valor').value);
+            const descricao = document.getElementById('descricao').value;
+            const categoria = document.getElementById('categoria').value;
+
+            const novaTransacao = {
+                tipo: tipo,
+                valor: valor,
+                descricao: descricao,
+                categoria: categoria,
+                data: new Date().toLocaleDateString('pt-BR'),
+                origem: 'manual',
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            };
+
+            await db.collection('transacoes').add(novaTransacao);
+            
+            fecharModal();
+        }
+
+        // ==============================================
+        // 🔄 ESCUTA DADOS EM TEMPO REAL (INCLUSIVE WHATSAPP)
+        // ==============================================
+        db.collection('transacoes')
+          .orderBy('createdAt', 'desc')
+          .limit(50)
+          .onSnapshot(snapshot => {
+              const transacoes = [];
+              snapshot.forEach(doc => {
+                  transacoes.push({ id: doc.id, ...doc.data() });
+              });
+              atualizarDados(transacoes);
+          });
+
+        // Atualizar todos os valores
+        function atualizarDados(transacoes) {
+            let totalReceitas = 0;
+            let totalDespesas = 0;
+
+            transacoes.forEach(t => {
+                if (t.tipo === 'receita') totalReceitas += t.valor;
+                else totalDespesas += t.valor;
+            });
+
+            const saldo = totalReceitas - totalDespesas;
+
+            document.getElementById('totalReceitas').textContent = `R$ ${totalReceitas.toFixed(2).replace('.', ',')}`;
+            document.getElementById('totalDespesas').textContent = `R$ ${totalDespesas.toFixed(2).replace('.', ',')}`;
+            document.getElementById('saldoTotal').textContent = saldo.toFixed(2).replace('.', ',');
+
+            atualizarLista(transacoes);
+        }
+
+        // Atualizar lista de transações
+        function atualizarLista(transacoes) {
+            const lista = document.getElementById('listaTransacoes');
+            
+            if (transacoes.length === 0) {
+                lista.innerHTML = `
+                    <div class="text-center text-gray-400 py-8">
+                        <i class="fa fa-list-alt text-4xl mb-2"></i>
+                        <p>Nenhuma transação cadastrada</p>
+                    </div>`;
+                return;
+            }
+
+            lista.innerHTML = '';
+            transacoes.forEach(t => {
+                const icone = t.tipo === 'receita' ? 'fa-arrow-up' : 'fa-arrow-down';
+                const cor = t.tipo === 'receita' ? 'text-success' : 'text-danger';
+                const origem = t.origem === 'whatsapp' 
+                    ? '<span class="text-xs text-whatsapp ml-2"><i class="fa fa-whatsapp"></i></span>' 
+                    : '';
+
+                lista.innerHTML += `
+                    <div class="flex items-center justify-between bg-gray-50 p-4 rounded-xl">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-full flex items-center justify-center ${cor} bg-opacity-10 bg-${cor.replace('text-', '')}/10">
+                                <i class="fa ${icone}"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-medium">${t.descricao} ${origem}</h4>
+                                <p class="text-xs text-gray-500">${t.categoria} • ${t.data}</p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <p class="font-semibold ${cor}">R$ ${t.valor.toFixed(2).replace('.', ',')}</p>
+                        </div>
+                    </div>`;
+            });
+        }
+
+        // Fechar modais ao clicar fora
+        document.getElementById('modalTransacao').addEventListener('click', function(e) {
+            if (e.target === this) fecharModal();
+        });
+        document.getElementById('modalWhatsapp').addEventListener('click', function(e) {
+            if (e.target === this) fecharModalWhatsapp();
+        });
+    </script>
+</body>
+</html>
