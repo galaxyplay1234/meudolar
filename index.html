@@ -71,23 +71,34 @@
                 </button>
             </div>
 
-            <div class="bg-white/15 backdrop-blur-sm rounded-2xl p-5">
+            <!-- SALDO TOTAL - FUNDO AZUL -->
+            <div class="bg-white/15 backdrop-blur-sm rounded-2xl p-5 mb-4">
                 <p class="text-white/80 text-sm">Saldo Total</p>
                 <h2 class="text-3xl font-bold mt-1">R$ <span id="saldoTotal">0,00</span></h2>
-                <div class="grid grid-cols-2 gap-4 mt-4">
-                    <div>
-                        <p class="text-white/80 text-xs">Receitas</p>
-                        <p class="text-lg font-semibold text-success" id="totalReceitas">R$ 0,00</p>
-                    </div>
-                    <div>
-                        <p class="text-white/80 text-xs">Despesas</p>
-                        <p class="text-lg font-semibold text-danger" id="totalDespesas">R$ 0,00</p>
-                    </div>
-                </div>
+                <p class="text-white/70 text-xs mt-1">Diferença entre receitas e despesas</p>
             </div>
         </header>
 
-        <div class="px-6 -mt-6">
+        <!-- QUADROS RECEITAS E DESPESAS - FUNDO BRANCO, CANTOS ARREDONDADOS -->
+        <div class="px-6 -mt-3">
+            <div class="grid grid-cols-2 gap-4">
+                <!-- RECEITAS -->
+                <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+                    <p class="text-gray-500 text-xs mb-1">Receitas Pagas</p>
+                    <p class="text-xl font-bold text-success" id="receitasPagas">R$ 0,00</p>
+                    <p class="text-gray-400 text-xs mt-1">Total: <span id="receitasTotal">R$ 0,00</span></p>
+                </div>
+
+                <!-- DESPESAS -->
+                <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+                    <p class="text-gray-500 text-xs mb-1">Despesas Pagas</p>
+                    <p class="text-xl font-bold text-danger" id="despesasPagas">R$ 0,00</p>
+                    <p class="text-gray-400 text-xs mt-1">Total: <span id="despesasTotal">R$ 0,00</span></p>
+                </div>
+            </div>
+        </div>
+
+        <div class="px-6 mt-6">
             <div class="grid grid-cols-2 gap-4">
                 <button onclick="abrirModal('receita')" class="bg-success text-white rounded-xl p-4 shadow-md flex items-center justify-center gap-2 font-medium">
                     <i class="fa fa-plus-circle"></i> Nova Receita
@@ -372,14 +383,28 @@ db.collection('transacoes')
   });
 
 function atualizarDados(transacoes) {
-    let totalReceitas = 0, totalDespesas = 0;
-    transacoes.forEach(t => t.tipo === 'receita' ? totalReceitas += t.valor : totalDespesas += t.valor);
+    let totalReceitas = 0, receitasPagas = 0;
+    let totalDespesas = 0, despesasPagas = 0;
+
+    transacoes.forEach(t => {
+        if (t.tipo === 'receita') {
+            totalReceitas += t.valor;
+            if (t.status === 'pago') receitasPagas += t.valor;
+        } else {
+            totalDespesas += t.valor;
+            if (t.status === 'pago') despesasPagas += t.valor;
+        }
+    });
+
+    // Saldo = Diferença entre receitas e despesas (todas)
     const saldo = totalReceitas - totalDespesas;
 
-    // TODOS OS VALORES FORMATADOS PADRÃO BRASILEIRO
-    document.getElementById('totalReceitas').textContent = `R$ ${formatarValor(totalReceitas)}`;
-    document.getElementById('totalDespesas').textContent = `R$ ${formatarValor(totalDespesas)}`;
+    // Atualiza valores na tela
     document.getElementById('saldoTotal').textContent = formatarValor(saldo);
+    document.getElementById('receitasPagas').textContent = `R$ ${formatarValor(receitasPagas)}`;
+    document.getElementById('receitasTotal').textContent = `R$ ${formatarValor(totalReceitas)}`;
+    document.getElementById('despesasPagas').textContent = `R$ ${formatarValor(despesasPagas)}`;
+    document.getElementById('despesasTotal').textContent = `R$ ${formatarValor(totalDespesas)}`;
 
     atualizarLista(transacoes);
 }
