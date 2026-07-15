@@ -16,13 +16,14 @@
             theme: {
                 extend: {
                     colors: {
-                        primary: '#165DFF',
-                        success: '#00B42A',
-                        danger: '#F53F3F',
-                        warning: '#FF7D00',
-                        dark: '#1E2129',
-                        gray: '#86909C',
-                        light: '#F2F3F5',
+                        primary: '#2563EB',
+                        primaryLight: '#3B82F6',
+                        success: '#16A34A',
+                        danger: '#DC2626',
+                        warning: '#F59E0B',
+                        dark: '#1E293B',
+                        gray: '#64748B',
+                        light: '#F8FAFC',
                         whatsapp: '#25D366'
                     },
                     fontFamily: {
@@ -56,69 +57,67 @@
             pointer-events: none;
             text-align: left !important;
             padding-left: 1rem !important;
-            color: #1E2129;
+            color: #1E293B;
         }
     </style>
 </head>
 <body class="bg-gray-50 font-inter text-gray-800 no-select">
     <div class="max-w-md mx-auto bg-white min-h-screen shadow-lg">
-        <!-- Cabeçalho -->
-        <header class="bg-primary text-white px-6 pt-8 pb-8 rounded-b-3xl">
-            <div class="flex justify-between items-center mb-5">
+        <!-- CABEÇALHO AZUL COM TUDO DENTRO -->
+        <header class="bg-primary text-white px-5 pt-7 pb-8 rounded-b-3xl">
+            <div class="flex justify-between items-center mb-6">
                 <h1 class="text-xl font-bold">Minhas Finanças</h1>
-                <button onclick="abrirModalWhatsapp()" class="text-xl bg-white/20 p-2 rounded-full">
+                <button onclick="abrirModalWhatsapp()" class="text-lg bg-white/20 p-2 rounded-full">
                     <i class="fa fa-whatsapp"></i>
                 </button>
             </div>
 
-            <!-- SALDO TOTAL E SALDO EM CONTA - DENTRO DO AZUL -->
-            <div class="bg-white rounded-2xl p-5 mb-4">
-                <p class="text-gray-500 text-sm">Total de Receitas</p>
-                <h2 class="text-2xl font-bold text-dark mt-1">R$ <span id="totalReceitas">0,00</span></h2>
-                <div class="mt-3 pt-3 border-t border-gray-100">
-                    <p class="text-primary text-sm font-medium">Saldo em Conta</p>
-                    <p class="text-xl font-bold text-primary mt-1">R$ <span id="saldoConta">0,00</span></p>
-                </div>
+            <!-- SALDO TOTAL -->
+            <div class="mb-5">
+                <p class="text-white/80 text-base">Saldo Total</p>
+                <h2 class="text-4xl font-bold mt-1">R$ <span id="saldoTotal">0,00</span></h2>
+                <p class="text-white/70 text-sm mt-1">Sobra: R$ <span id="valorSobra">0,00</span></p>
             </div>
 
-            <!-- QUADROS RECEITAS E DESPESAS - FUNDO BRANCO, SEM BORDA, MAIS PERTO -->
-            <div class="grid grid-cols-2 gap-3">
+            <!-- CARDS BRANCOS AGORA DENTRO DO AZUL -->
+            <div class="grid grid-cols-2 gap-4">
                 <!-- RECEITAS -->
-                <div class="bg-white rounded-xl p-4">
-                    <p class="text-gray-500 text-xs mb-1">Recebido</p>
-                    <p class="text-lg font-bold text-success" id="recebidoValor">R$ 0,00</p>
-                    <p class="text-gray-400 text-xs mt-1">A receber: <span id="aReceberValor">R$ 0,00</span></p>
+                <div class="bg-white rounded-xl p-4 text-dark">
+                    <p class="text-base font-medium mb-1">Receitas Recebidas</p>
+                    <p class="text-2xl font-bold text-success">R$ <span id="receitasPagas">0,00</span></p>
+                    <p class="text-gray-600 text-sm mt-1">Total: R$ <span id="receitasTotal">0,00</span></p>
                 </div>
 
                 <!-- DESPESAS -->
-                <div class="bg-white rounded-xl p-4">
-                    <p class="text-gray-500 text-xs mb-1">Pago</p>
-                    <p class="text-lg font-bold text-danger" id="pagoValor">R$ 0,00</p>
-                    <p class="text-gray-400 text-xs mt-1">A pagar: <span id="aPagarValor">R$ 0,00</span></p>
+                <div class="bg-white rounded-xl p-4 text-dark">
+                    <p class="text-base font-medium mb-1">Despesas Pagas</p>
+                    <p class="text-2xl font-bold text-danger">R$ <span id="despesasPagas">0,00</span></p>
+                    <p class="text-gray-600 text-sm mt-1">Total: R$ <span id="despesasTotal">0,00</span></p>
                 </div>
             </div>
         </header>
 
-        <div class="px-6 mt-6">
+        <!-- BOTÕES MENORES -->
+        <div class="px-5 mt-6">
             <div class="grid grid-cols-2 gap-4">
-                <button onclick="abrirModal('receita')" class="bg-success text-white rounded-xl p-4 shadow-md flex items-center justify-center gap-2 font-medium">
+                <button onclick="abrirModal('receita')" class="bg-success text-white rounded-xl p-3.5 shadow-md flex items-center justify-center gap-2 text-base font-medium">
                     <i class="fa fa-plus-circle"></i> Nova Receita
                 </button>
-                <button onclick="abrirModal('despesa')" class="bg-danger text-white rounded-xl p-4 shadow-md flex items-center justify-center gap-2 font-medium">
+                <button onclick="abrirModal('despesa')" class="bg-danger text-white rounded-xl p-3.5 shadow-md flex items-center justify-center gap-2 text-base font-medium">
                     <i class="fa fa-minus-circle"></i> Nova Despesa
                 </button>
             </div>
         </div>
 
-        <div class="px-6 mt-8">
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="text-lg font-semibold">Transações Recentes</h3>
+        <div class="px-5 mt-7">
+            <div class="flex justify-between items-center mb-3">
+                <h3 class="text-base font-semibold">Transações Recentes</h3>
                 <a href="#" class="text-primary text-sm font-medium">Ver Todas</a>
             </div>
 
-            <div id="listaTransacoes" class="space-y-3 max-h-[450px] overflow-y-auto scrollbar-hide">
-                <div class="text-center text-gray-400 py-8">
-                    <i class="fa fa-list-alt text-4xl mb-2"></i>
+            <div id="listaTransacoes" class="space-y-2.5 max-h-[380px] overflow-y-auto scrollbar-hide">
+                <div class="text-center text-gray-400 py-6">
+                    <i class="fa fa-list-alt text-3xl mb-1.5"></i>
                     <p>Nenhuma transação cadastrada</p>
                 </div>
             </div>
@@ -126,62 +125,62 @@
 
         <!-- Modal Cadastro/Edição -->
         <div id="modalTransacao" class="fixed inset-0 bg-black/60 flex items-end justify-center z-50 hidden">
-            <div class="bg-white rounded-t-3xl w-full max-w-md p-6">
-                <div class="flex justify-between items-center mb-5">
-                    <h3 id="tituloModal" class="text-xl font-bold">Nova Transação</h3>
-                    <button onclick="fecharModal()" class="text-gray-500 text-xl"><i class="fa fa-times"></i></button>
+            <div class="bg-white rounded-t-3xl w-full max-w-md p-5">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 id="tituloModal" class="text-lg font-bold">Nova Transação</h3>
+                    <button onclick="fecharModal()" class="text-gray-500 text-lg"><i class="fa fa-times"></i></button>
                 </div>
 
                 <form id="formTransacao" onsubmit="salvarTransacao(event)">
                     <input type="hidden" id="tipoTransacao" value="">
                     <input type="hidden" id="idEdicao" value="">
 
-                    <div class="mb-4">
+                    <div class="mb-3.5">
                         <label class="block text-sm font-medium text-gray-600 mb-1">Valor (R$)</label>
-                        <input type="text" id="valor" class="w-full border border-gray-200 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-primary/40" placeholder="0,00" required oninput="mascaraValor(this)">
+                        <input type="text" id="valor" class="w-full border border-gray-200 rounded-lg p-2.5 focus:outline-none focus:ring-2 focus:ring-primary/40" placeholder="0,00" required oninput="mascaraValor(this)">
                     </div>
 
-                    <div class="mb-4">
+                    <div class="mb-3.5">
                         <label class="block text-sm font-medium text-gray-600 mb-1">Descrição</label>
-                        <input type="text" id="descricao" class="w-full border border-gray-200 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-primary/40" required>
+                        <input type="text" id="descricao" class="w-full border border-gray-200 rounded-lg p-2.5 focus:outline-none focus:ring-2 focus:ring-primary/40" required>
                     </div>
 
                     <!-- CAMPO DATA -->
-                    <div class="mb-4">
+                    <div class="mb-3.5">
                         <label class="block text-sm font-medium text-gray-600 mb-1">Data</label>
-                        <div class="campo-data-wrapper w-full border border-gray-200 rounded-xl p-3 focus-within:ring-2 focus-within:ring-primary/40 relative">
+                        <div class="campo-data-wrapper w-full border border-gray-200 rounded-lg p-2.5 focus-within:ring-2 focus-within:ring-primary/40 relative">
                             <div id="dataVisual" class="data-visual">Selecione uma data</div>
                             <input type="date" id="data" required onchange="atualizarDataVisual(this)">
                             <i class="fa fa-calendar absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"></i>
                         </div>
                     </div>
 
-                    <div class="mb-4">
+                    <div class="mb-3.5">
                         <label class="block text-sm font-medium text-gray-600 mb-1">Categoria</label>
-                        <select id="categoria" class="w-full border border-gray-200 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-primary/40" required>
+                        <select id="categoria" class="w-full border border-gray-200 rounded-lg p-2.5 focus:outline-none focus:ring-2 focus:ring-primary/40" required>
                             <option value="">Selecione</option>
                         </select>
                     </div>
 
-                    <div class="mb-6">
-                        <label class="block text-sm font-medium text-gray-600 mb-2">Status</label>
-                        <div class="grid grid-cols-2 gap-3">
-                            <label class="flex items-center justify-center gap-2 border border-success text-success rounded-xl p-3 cursor-pointer hover:bg-success/5 transition has-[:checked]:bg-success has-[:checked]:text-white">
+                    <div class="mb-5">
+                        <label class="block text-sm font-medium text-gray-600 mb-1.5">Status</label>
+                        <div class="grid grid-cols-2 gap-2.5">
+                            <label class="flex items-center justify-center gap-1.5 border border-success text-success rounded-lg p-2.5 cursor-pointer hover:bg-success/5 transition has-[:checked]:bg-success has-[:checked]:text-white">
                                 <input type="radio" name="statusPagamento" value="pago" class="hidden" checked>
                                 <i class="fa fa-check-circle"></i> <span id="textoStatus">Recebida</span>
                             </label>
-                            <label class="flex items-center justify-center gap-2 border border-warning text-warning rounded-xl p-3 cursor-pointer hover:bg-warning/5 transition has-[:checked]:bg-warning has-[:checked]:text-white">
+                            <label class="flex items-center justify-center gap-1.5 border border-warning text-warning rounded-lg p-2.5 cursor-pointer hover:bg-warning/5 transition has-[:checked]:bg-warning has-[:checked]:text-white">
                                 <input type="radio" name="statusPagamento" value="pendente" class="hidden">
                                 <i class="fa fa-clock-o"></i> <span id="textoStatusPendente">A Receber</span>
                             </label>
                         </div>
                     </div>
 
-                    <div class="flex gap-3">
-                        <button type="button" id="btnExcluir" onclick="excluirTransacao()" class="hidden bg-danger/10 text-danger hover:bg-danger/20 font-semibold rounded-xl p-3.5 transition">
+                    <div class="flex gap-2.5">
+                        <button type="button" id="btnExcluir" onclick="excluirTransacao()" class="hidden bg-danger/10 text-danger hover:bg-danger/20 font-medium rounded-lg p-2.5 transition">
                             <i class="fa fa-trash"></i>
                         </button>
-                        <button type="submit" id="btnSalvar" class="flex-1 bg-primary hover:bg-primary/90 text-white font-semibold rounded-xl p-3.5 transition">Salvar Transação</button>
+                        <button type="submit" id="btnSalvar" class="flex-1 bg-primary hover:bg-primary/90 text-white font-medium rounded-lg p-2.5 transition">Salvar Transação</button>
                     </div>
                 </form>
             </div>
@@ -189,24 +188,24 @@
 
         <!-- Modal WhatsApp -->
         <div id="modalWhatsapp" class="fixed inset-0 bg-black/60 flex items-end justify-center z-50 hidden">
-            <div class="bg-white rounded-t-3xl w-full max-w-md p-6">
-                <div class="flex justify-between items-center mb-5">
-                    <h3 class="text-xl font-bold flex items-center gap-2">
+            <div class="bg-white rounded-t-3xl w-full max-w-md p-5">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-bold flex items-center gap-2">
                         <i class="fa fa-whatsapp text-whatsapp"></i> Gastos via WhatsApp
                     </h3>
-                    <button onclick="fecharModalWhatsapp()" class="text-gray-500 text-xl"><i class="fa fa-times"></i></button>
+                    <button onclick="fecharModalWhatsapp()" class="text-gray-500 text-lg"><i class="fa fa-times"></i></button>
                 </div>
-                <div class="space-y-4 text-gray-600">
-                    <p class="text-sm">Envie mensagens para o seu número cadastrado e elas cairão automaticamente aqui!</p>
-                    <div class="bg-light p-4 rounded-xl">
-                        <p class="font-medium text-dark mb-2">📝 Como enviar:</p>
-                        <ul class="space-y-2 text-sm">
-                            <li>• <code class="bg-white px-2 rounded">50,90 padaria</code> → Despesa</li>
-                            <li>• <code class="bg-white px-2 rounded">+150 salário</code> → Receita</li>
+                <div class="space-y-3 text-gray-600 text-sm">
+                    <p>Envie mensagens para o seu número cadastrado e elas cairão automaticamente aqui!</p>
+                    <div class="bg-light p-3.5 rounded-xl">
+                        <p class="font-medium text-dark mb-1.5">📝 Como enviar:</p>
+                        <ul class="space-y-1">
+                            <li>• <code class="bg-white px-1.5 rounded">50,90 padaria</code> → Despesa</li>
+                            <li>• <code class="bg-white px-1.5 rounded">+150 salário</code> → Receita</li>
                         </ul>
                     </div>
                 </div>
-                <button onclick="fecharModalWhatsapp()" class="w-full bg-whatsapp hover:bg-whatsapp/90 text-white font-semibold rounded-xl p-3.5 mt-6 transition">Entendi</button>
+                <button onclick="fecharModalWhatsapp()" class="w-full bg-whatsapp hover:bg-whatsapp/90 text-white font-medium rounded-lg p-3 mt-5 transition">Entendi</button>
             </div>
         </div>
     </div>
@@ -231,7 +230,7 @@ const categorias = {
 let listaTransacoesGlobal = [];
 
 // ==============================================
-// ✅ FUNÇÕES DE FORMATAÇÃO DE VALORES
+// ✅ FUNÇÕES DE FORMATAÇÃO
 // ==============================================
 
 function mascaraValor(campo) {
@@ -282,7 +281,6 @@ function abrirModal(tipo) {
     document.getElementById('btnExcluir').classList.add('hidden');
     document.getElementById('btnSalvar').textContent = 'Salvar Transação';
 
-    // ALTERA O TEXTO DO STATUS CONFORME O TIPO
     document.getElementById('textoStatus').textContent = tipo === 'receita' ? 'Recebida' : 'Pago';
     document.getElementById('textoStatusPendente').textContent = tipo === 'receita' ? 'A Receber' : 'A Pagar';
 
@@ -310,7 +308,6 @@ function abrirEdicao(id) {
     document.getElementById('btnExcluir').classList.remove('hidden');
     document.getElementById('btnSalvar').textContent = 'Atualizar';
 
-    // ATUALIZA TEXTO DO STATUS NA EDIÇÃO
     document.getElementById('textoStatus').textContent = t.tipo === 'receita' ? 'Recebida' : 'Pago';
     document.getElementById('textoStatusPendente').textContent = t.tipo === 'receita' ? 'A Receber' : 'A Pagar';
 
@@ -386,37 +383,35 @@ db.collection('transacoes')
       atualizarDados(listaTransacoesGlobal);
   });
 
+// ==============================================
+// ✅ LÓGICA COM VALOR DE SOBRA
+// ==============================================
 function atualizarDados(transacoes) {
     let totalReceitasGeral = 0;
-    let recebido = 0;
+    let receitasJaRecebidas = 0;
     let totalDespesasGeral = 0;
-    let pago = 0;
+    let despesasJaPagas = 0;
 
     transacoes.forEach(t => {
         if (t.tipo === 'receita') {
             totalReceitasGeral += t.valor;
-            if (t.status === 'pago') recebido += t.valor;
+            if (t.status === 'pago') receitasJaRecebidas += t.valor;
         } else {
             totalDespesasGeral += t.valor;
-            if (t.status === 'pago') pago += t.valor;
+            if (t.status === 'pago') despesasJaPagas += t.valor;
         }
     });
 
-    // ✅ LÓGICA EXATA QUE VOCÊ PEDIU:
-    // Saldo em Conta = Recebido - Pago (o que realmente entrou e saiu)
-    const saldoConta = recebido - pago;
-    const aReceber = totalReceitasGeral - recebido;
-    const aPagar = totalDespesasGeral - pago;
+    const saldoTotal = receitasJaRecebidas - despesasJaPagas;
+    // Valor que vai sobrar: Total de receitas menos total de despesas
+    const valorSobra = totalReceitasGeral - totalDespesasGeral;
 
-    // ATUALIZA TUDO NA TELA
-    document.getElementById('totalReceitas').textContent = formatarValor(totalReceitasGeral);
-    document.getElementById('saldoConta').textContent = formatarValor(saldoConta);
-    
-    document.getElementById('recebidoValor').textContent = `R$ ${formatarValor(recebido)}`;
-    document.getElementById('aReceberValor').textContent = `R$ ${formatarValor(aReceber)}`;
-    
-    document.getElementById('pagoValor').textContent = `R$ ${formatarValor(pago)}`;
-    document.getElementById('aPagarValor').textContent = `R$ ${formatarValor(aPagar)}`;
+    document.getElementById('saldoTotal').textContent = formatarValor(saldoTotal);
+    document.getElementById('valorSobra').textContent = formatarValor(valorSobra);
+    document.getElementById('receitasPagas').textContent = formatarValor(receitasJaRecebidas);
+    document.getElementById('receitasTotal').textContent = formatarValor(totalReceitasGeral);
+    document.getElementById('despesasPagas').textContent = formatarValor(despesasJaPagas);
+    document.getElementById('despesasTotal').textContent = formatarValor(totalDespesasGeral);
 
     atualizarLista(transacoes);
 }
@@ -424,7 +419,7 @@ function atualizarDados(transacoes) {
 function atualizarLista(transacoes) {
     const lista = document.getElementById('listaTransacoes');
     if (transacoes.length === 0) {
-        lista.innerHTML = `<div class="text-center text-gray-400 py-8"><i class="fa fa-list-alt text-4xl mb-2"></i><p>Nenhuma transação cadastrada</p></div>`;
+        lista.innerHTML = `<div class="text-center text-gray-400 py-6"><i class="fa fa-list-alt text-3xl mb-1.5"></i><p>Nenhuma transação cadastrada</p></div>`;
         return;
     }
 
@@ -432,20 +427,20 @@ function atualizarLista(transacoes) {
     transacoes.forEach(t => {
         const icone = t.tipo === 'receita' ? 'fa-arrow-up' : 'fa-arrow-down';
         const cor = t.tipo === 'receita' ? 'text-success' : 'text-danger';
-        const origem = t.origem === 'whatsapp' ? '<span class="text-xs text-whatsapp ml-2"><i class="fa fa-whatsapp"></i></span>' : '';
+        const origem = t.origem === 'whatsapp' ? '<span class="text-xs text-whatsapp ml-1.5"><i class="fa fa-whatsapp"></i></span>' : '';
         const statusTexto = t.tipo === 'receita' 
             ? (t.status === 'pago' ? 'Recebida' : 'A Receber')
             : (t.status === 'pago' ? 'Pago' : 'A Pagar');
         const statusCor = t.status === 'pago' ? 'text-success' : 'text-warning';
 
         lista.innerHTML += `
-            <div onclick="abrirEdicao('${t.id}')" class="flex items-center justify-between bg-gray-50 p-4 rounded-xl cursor-pointer hover:bg-gray-100 transition">
-                <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-full flex items-center justify-center ${cor} bg-opacity-10">
+            <div onclick="abrirEdicao('${t.id}')" class="flex items-center justify-between bg-gray-50 p-3.5 rounded-xl cursor-pointer hover:bg-gray-100 transition">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-9 h-9 rounded-full flex items-center justify-center ${cor} bg-opacity-10">
                         <i class="fa ${icone}"></i>
                     </div>
                     <div>
-                        <h4 class="font-medium">${t.descricao} ${origem}</h4>
+                        <h4 class="font-medium text-sm">${t.descricao} ${origem}</h4>
                         <p class="text-xs text-gray-500">${t.categoria} • ${t.data} • <span class="${statusCor}">${statusTexto}</span></p>
                     </div>
                 </div>
