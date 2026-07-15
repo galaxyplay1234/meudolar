@@ -41,16 +41,23 @@
 
         html, body { overscroll-behavior: none; touch-action: pan-x pan-y; }
 
-        /* FORÇA DATA ALINHADA À ESQUERDA - NÃO MUDA MAIS! */
+        /* FORÇA ALINHAMENTO ESQUERDA NO IPHONE/SAFARI */
         input[type="date"] {
             text-align: left !important;
             direction: ltr !important;
-            -webkit-text-align: left !important;
-            padding-left: 1rem !important;
+            padding-left: 16px !important;
+            position: relative;
         }
         input[type="date"]::-webkit-datetime-edit {
             text-align: left !important;
+            padding: 0 !important;
             padding-left: 0 !important;
+        }
+        input[type="date"]::-webkit-calendar-picker-indicator {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
         }
     </style>
 </head>
@@ -249,7 +256,6 @@ function abrirEdicao(id) {
     document.getElementById('valor').value = t.valor;
     document.getElementById('descricao').value = t.descricao;
 
-    // Converte data dd/mm/aaaa para aaaa-mm-dd
     const dataParts = t.data.split('/');
     document.getElementById('data').value = `${dataParts[2]}-${dataParts[1]}-${dataParts[0]}`;
 
@@ -271,7 +277,6 @@ function fecharModal() {
     document.getElementById('formTransacao').reset();
 }
 
-// ✅ BOTÃO SALVAR/ATUALIZAR - CORRIGIDO!
 async function salvarTransacao(e) {
     e.preventDefault();
     
@@ -291,10 +296,8 @@ async function salvarTransacao(e) {
     };
 
     if (idEdicao) {
-        // Atualiza existente
         await db.collection('transacoes').doc(idEdicao).update(dados);
     } else {
-        // Cria novo
         dados.createdAt = firebase.firestore.FieldValue.serverTimestamp();
         await db.collection('transacoes').add(dados);
     }
@@ -310,7 +313,6 @@ async function excluirTransacao() {
     }
 }
 
-// Escuta Firebase
 db.collection('transacoes')
   .orderBy('createdAt', 'desc')
   .limit(50)
