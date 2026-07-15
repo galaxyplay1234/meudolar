@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Controle Financeiro + WhatsApp</title>
+    <title>Controle Financeiro</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
     
@@ -19,6 +19,7 @@
                         primary: '#165DFF',
                         success: '#00B42A',
                         danger: '#F53F3F',
+                        warning: '#FF7D00',
                         dark: '#1E2129',
                         gray: '#86909C',
                         light: '#F2F3F5',
@@ -133,11 +134,30 @@
                         <input type="text" id="descricao" class="w-full border border-gray-200 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-primary/40" placeholder="Ex: Salário, Aluguel..." required>
                     </div>
 
-                    <div class="mb-6">
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-600 mb-1">Data</label>
+                        <input type="date" id="data" class="w-full border border-gray-200 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-primary/40" required>
+                    </div>
+
+                    <div class="mb-4">
                         <label class="block text-sm font-medium text-gray-600 mb-1">Categoria</label>
                         <select id="categoria" class="w-full border border-gray-200 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-primary/40" required>
                             <option value="">Selecione</option>
                         </select>
+                    </div>
+
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-gray-600 mb-2">Status do Pagamento</label>
+                        <div class="grid grid-cols-2 gap-3">
+                            <label class="flex items-center justify-center gap-2 border border-success text-success rounded-xl p-3 cursor-pointer hover:bg-success/5 transition has-[:checked]:bg-success has-[:checked]:text-white">
+                                <input type="radio" name="statusPagamento" value="pago" class="hidden" checked>
+                                <i class="fa fa-check-circle"></i> Pago
+                            </label>
+                            <label class="flex items-center justify-center gap-2 border border-warning text-warning rounded-xl p-3 cursor-pointer hover:bg-warning/5 transition has-[:checked]:bg-warning has-[:checked]:text-white">
+                                <input type="radio" name="statusPagamento" value="pendente" class="hidden">
+                                <i class="fa fa-clock-o"></i> Pendente
+                            </label>
+                        </div>
                     </div>
 
                     <button type="submit" class="w-full bg-primary hover:bg-primary/90 text-white font-semibold rounded-xl p-3.5 transition">Salvar Transação</button>
@@ -223,6 +243,10 @@ const db = firebase.firestore();
             document.getElementById('tipoTransacao').value = tipo;
             document.getElementById('tituloModal').textContent = tipo === 'receita' ? 'Nova Receita' : 'Nova Despesa';
             
+            // Preenche data atual por padrão
+            const hoje = new Date().toISOString().split('T')[0];
+            document.getElementById('data').value = hoje;
+
             const select = document.getElementById('categoria');
             select.innerHTML = '<option value="">Selecione</option>';
             categorias[tipo].forEach(cat => {
@@ -247,14 +271,18 @@ const db = firebase.firestore();
             const tipo = document.getElementById('tipoTransacao').value;
             const valor = parseFloat(document.getElementById('valor').value);
             const descricao = document.getElementById('descricao').value;
+            const dataInput = document.getElementById('data').value;
+            const dataFormatada = dataInput.split('-').reverse().join('/');
             const categoria = document.getElementById('categoria').value;
+            const status = document.querySelector('input[name="statusPagamento"]:checked').value;
 
             const novaTransacao = {
                 tipo: tipo,
                 valor: valor,
                 descricao: descricao,
+                data: dataFormatada,
                 categoria: categoria,
-                data: new Date().toLocaleDateString('pt-BR'),
+                status: status,
                 origem: 'manual',
                 createdAt: firebase.firestore.FieldValue.serverTimestamp()
             };
@@ -317,6 +345,10 @@ const db = firebase.firestore();
                 const origem = t.origem === 'whatsapp' 
                     ? '<span class="text-xs text-whatsapp ml-2"><i class="fa fa-whatsapp"></i></span>' 
                     : '';
+                // Indicador de status
+                const statusIcone = t.status === 'pago' 
+                    ? '<span class="text-success text-xs ml-2" title="Pago"><i class="fa fa-check-circle"></i></span>' 
+                    : '<span class="text-warning text-xs ml-2" title="Pendente"><i class="fa fa-clock-o"></i></span>';
 
                 lista.innerHTML += `
                     <div class="flex items-center justify-between bg-gray-50 p-4 rounded-xl">
@@ -325,7 +357,7 @@ const db = firebase.firestore();
                                 <i class="fa ${icone}"></i>
                             </div>
                             <div>
-                                <h4 class="font-medium">${t.descricao} ${origem}</h4>
+                                <h4 class="font-medium">${t.descricao} ${origem} ${statusIcone}</h4>
                                 <p class="text-xs text-gray-500">${t.categoria} • ${t.data}</p>
                             </div>
                         </div>
