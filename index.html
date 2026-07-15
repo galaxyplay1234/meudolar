@@ -34,34 +34,23 @@
     </script>
     <style type="text/tailwindcss">
         @layer utilities {
-            .content-auto {
-                content-visibility: auto;
-            }
-            .no-select {
-                -webkit-user-select: none;
-                -moz-user-select: none;
-                -ms-user-select: none;
-                user-select: none;
-            }
-            .scrollbar-hide::-webkit-scrollbar {
-                display: none;
-            }
-            .scrollbar-hide {
-                -ms-overflow-style: none;
-                scrollbar-width: none;
-            }
+            .content-auto { content-visibility: auto; }
+            .no-select { -webkit-user-select: none; user-select: none; }
+            .scrollbar-hide::-webkit-scrollbar { display: none; }
         }
 
-        html, body {
-            overscroll-behavior: none;
-            touch-action: pan-x pan-y;
-        }
+        html, body { overscroll-behavior: none; touch-action: pan-x pan-y; }
 
-        /* CORRIGE ALINHAMENTO DA DATA */
+        /* FORÇA DATA ALINHADA À ESQUERDA - NÃO MUDA MAIS! */
         input[type="date"] {
             text-align: left !important;
-            text-align: start !important;
-            direction: ltr;
+            direction: ltr !important;
+            -webkit-text-align: left !important;
+            padding-left: 1rem !important;
+        }
+        input[type="date"]::-webkit-datetime-edit {
+            text-align: left !important;
+            padding-left: 0 !important;
         }
     </style>
 </head>
@@ -76,7 +65,6 @@
                 </button>
             </div>
 
-            <!-- Saldo Total -->
             <div class="bg-white/15 backdrop-blur-sm rounded-2xl p-5">
                 <p class="text-white/80 text-sm">Saldo Total</p>
                 <h2 class="text-3xl font-bold mt-1">R$ <span id="saldoTotal">0,00</span></h2>
@@ -93,7 +81,6 @@
             </div>
         </header>
 
-        <!-- Ações Rápidas -->
         <div class="px-6 -mt-6">
             <div class="grid grid-cols-2 gap-4">
                 <button onclick="abrirModal('receita')" class="bg-success text-white rounded-xl p-4 shadow-md flex items-center justify-center gap-2 font-medium">
@@ -105,7 +92,6 @@
             </div>
         </div>
 
-        <!-- Lista de Transações -->
         <div class="px-6 mt-8">
             <div class="flex justify-between items-center mb-4">
                 <h3 class="text-lg font-semibold">Transações Recentes</h3>
@@ -120,9 +106,9 @@
             </div>
         </div>
 
-        <!-- Modal de Cadastro/Edição -->
+        <!-- Modal Cadastro/Edição -->
         <div id="modalTransacao" class="fixed inset-0 bg-black/60 flex items-end justify-center z-50 hidden">
-            <div class="bg-white rounded-t-3xl w-full max-w-md p-6 transform transition-transform duration-300">
+            <div class="bg-white rounded-t-3xl w-full max-w-md p-6">
                 <div class="flex justify-between items-center mb-5">
                     <h3 id="tituloModal" class="text-xl font-bold">Nova Transação</h3>
                     <button onclick="fecharModal()" class="text-gray-500 text-xl"><i class="fa fa-times"></i></button>
@@ -134,12 +120,12 @@
 
                     <div class="mb-4">
                         <label class="block text-sm font-medium text-gray-600 mb-1">Valor (R$)</label>
-                        <input type="number" step="0.01" min="0.01" id="valor" class="w-full border border-gray-200 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-primary/40" placeholder="0,00" required>
+                        <input type="number" step="0.01" min="0.01" id="valor" class="w-full border border-gray-200 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-primary/40" required>
                     </div>
 
                     <div class="mb-4">
                         <label class="block text-sm font-medium text-gray-600 mb-1">Descrição</label>
-                        <input type="text" id="descricao" class="w-full border border-gray-200 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-primary/40" placeholder="Ex: Salário, Aluguel..." required>
+                        <input type="text" id="descricao" class="w-full border border-gray-200 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-primary/40" required>
                     </div>
 
                     <div class="mb-4">
@@ -178,7 +164,7 @@
             </div>
         </div>
 
-        <!-- Modal Instruções WhatsApp -->
+        <!-- Modal WhatsApp -->
         <div id="modalWhatsapp" class="fixed inset-0 bg-black/60 flex items-end justify-center z-50 hidden">
             <div class="bg-white rounded-t-3xl w-full max-w-md p-6">
                 <div class="flex justify-between items-center mb-5">
@@ -187,35 +173,22 @@
                     </h3>
                     <button onclick="fecharModalWhatsapp()" class="text-gray-500 text-xl"><i class="fa fa-times"></i></button>
                 </div>
-
                 <div class="space-y-4 text-gray-600">
                     <p class="text-sm">Envie mensagens para o seu número cadastrado e elas cairão automaticamente aqui!</p>
-                    
                     <div class="bg-light p-4 rounded-xl">
                         <p class="font-medium text-dark mb-2">📝 Como enviar:</p>
                         <ul class="space-y-2 text-sm">
                             <li>• <code class="bg-white px-2 rounded">50,90 padaria</code> → Despesa</li>
                             <li>• <code class="bg-white px-2 rounded">+150 salário</code> → Receita</li>
-                            <li>• <code class="bg-white px-2 rounded">Recebi 2000 de frete</code> → Receita</li>
-                            <li>• <code class="bg-white px-2 rounded">Gastei 85,50 com supermercado</code> → Despesa</li>
                         </ul>
                     </div>
-
-                    <div class="bg-primary/5 p-4 rounded-xl text-sm">
-                        <p class="font-medium text-primary mb-1">🔧 Configuração:</p>
-                        <p>Após configurar o Firebase Functions e a API do WhatsApp, os dados chegam em tempo real!</p>
-                    </div>
                 </div>
-
                 <button onclick="fecharModalWhatsapp()" class="w-full bg-whatsapp hover:bg-whatsapp/90 text-white font-semibold rounded-xl p-3.5 mt-6 transition">Entendi</button>
             </div>
         </div>
     </div>
 
     <script>
-        //// ==============================================
-// 🔧 CONFIGURAÇÃO DO FIREBASE - JÁ PREENCHI SEUS DADOS!
-// ==============================================
 const firebaseConfig = {
     apiKey: "AIzaSyDwyIKkuKQpGzcmEdfd306-RztHfNjGKb4",
     authDomain: "meudolar-5e1bb.firebaseapp.com",
@@ -224,188 +197,175 @@ const firebaseConfig = {
     messagingSenderId: "306212390482",
     appId: "1:306212390482:web:5e6cfe205e374672dc418b"
 };
-
-// Inicializa Firebase
 const app = firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
-        // Categorias por tipo
-        const categorias = {
-            receita: ['Salário', 'Vendas', 'Investimentos', 'Outros'],
-            despesa: ['Alimentação', 'Moradia', 'Transporte', 'Lazer', 'Saúde', 'Educação', 'Outros']
-        };
+const categorias = {
+    receita: ['Salário', 'Vendas', 'Investimentos', 'Outros'],
+    despesa: ['Alimentação', 'Moradia', 'Transporte', 'Lazer', 'Saúde', 'Educação', 'Outros']
+};
 
-        let listaTransacoesGlobal = [];
+let listaTransacoesGlobal = [];
 
-        // ==============================================
-        // 🚀 FUNÇÕES PRINCIPAIS
-        // ==============================================
+function abrirModalWhatsapp() {
+    document.getElementById('modalWhatsapp').classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+}
+function fecharModalWhatsapp() {
+    document.getElementById('modalWhatsapp').classList.add('hidden');
+    document.body.style.overflow = 'auto';
+}
 
-        function abrirModalWhatsapp() {
-            document.getElementById('modalWhatsapp').classList.remove('hidden');
-            document.body.style.overflow = 'hidden';
-        }
+function abrirModal(tipo) {
+    fecharModal();
+    document.getElementById('tipoTransacao').value = tipo;
+    document.getElementById('idEdicao').value = '';
+    document.getElementById('tituloModal').textContent = tipo === 'receita' ? 'Nova Receita' : 'Nova Despesa';
+    document.getElementById('btnExcluir').classList.add('hidden');
+    document.getElementById('btnSalvar').textContent = 'Salvar Transação';
 
-        function fecharModalWhatsapp() {
-            document.getElementById('modalWhatsapp').classList.add('hidden');
-            document.body.style.overflow = 'auto';
-        }
+    const hoje = new Date().toISOString().split('T')[0];
+    document.getElementById('data').value = hoje;
 
-        // ABRIR MODAL NOVO - LIMPA TUDO ANTES
-        function abrirModal(tipo) {
-            fecharModal(); // Garante que limpa antes de abrir novo
-            
-            document.getElementById('tipoTransacao').value = tipo;
-            document.getElementById('idEdicao').value = '';
-            document.getElementById('tituloModal').textContent = tipo === 'receita' ? 'Nova Receita' : 'Nova Despesa';
-            document.getElementById('btnExcluir').classList.add('hidden');
-            document.getElementById('btnSalvar').textContent = 'Salvar Transação';
-            
-            // Data atual
-            const hoje = new Date().toISOString().split('T')[0];
-            document.getElementById('data').value = hoje;
+    const select = document.getElementById('categoria');
+    select.innerHTML = '<option value="">Selecione</option>';
+    categorias[tipo].forEach(cat => select.innerHTML += `<option value="${cat}">${cat}</option>`);
 
-            const select = document.getElementById('categoria');
-            select.innerHTML = '<option value="">Selecione</option>';
-            categorias[tipo].forEach(cat => select.innerHTML += `<option value="${cat}">${cat}</option>`);
+    document.querySelector('input[name="statusPagamento"][value="pago"]').checked = true;
+    document.getElementById('modalTransacao').classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+}
 
-            document.querySelector('input[name="statusPagamento"][value="pago"]').checked = true;
+function abrirEdicao(id) {
+    const t = listaTransacoesGlobal.find(item => item.id === id);
+    if(!t) return;
 
-            document.getElementById('modalTransacao').classList.remove('hidden');
-            document.body.style.overflow = 'hidden';
-        }
+    document.getElementById('tipoTransacao').value = t.tipo;
+    document.getElementById('idEdicao').value = id;
+    document.getElementById('tituloModal').textContent = 'Editar Transação';
+    document.getElementById('btnExcluir').classList.remove('hidden');
+    document.getElementById('btnSalvar').textContent = 'Atualizar';
 
-        // ABRIR EDIÇÃO
-        function abrirEdicao(id) {
-            const t = listaTransacoesGlobal.find(item => item.id === id);
-            if(!t) return;
+    document.getElementById('valor').value = t.valor;
+    document.getElementById('descricao').value = t.descricao;
 
-            document.getElementById('tipoTransacao').value = t.tipo;
-            document.getElementById('idEdicao').value = id;
-            document.getElementById('tituloModal').textContent = 'Editar Transação';
-            document.getElementById('btnExcluir').classList.remove('hidden');
-            document.getElementById('btnSalvar').textContent = 'Atualizar';
+    // Converte data dd/mm/aaaa para aaaa-mm-dd
+    const dataParts = t.data.split('/');
+    document.getElementById('data').value = `${dataParts[2]}-${dataParts[1]}-${dataParts[0]}`;
 
-            document.getElementById('valor').value = t.valor;
-            document.getElementById('descricao').value = t.descricao;
+    const select = document.getElementById('categoria');
+    select.innerHTML = '<option value="">Selecione</option>';
+    categorias[t.tipo].forEach(cat => {
+        select.innerHTML += `<option value="${cat}" ${cat === t.categoria ? 'selected' : ''}>${cat}</option>`;
+    });
 
-            // Converte data corretamente
-            const dataParts = t.data.split('/');
-            document.getElementById('data').value = `${dataParts[2]}-${dataParts[1]}-${dataParts[0]}`;
+    document.querySelector(`input[name="statusPagamento"][value="${t.status || 'pago'}"]`).checked = true;
 
-            const select = document.getElementById('categoria');
-            select.innerHTML = '<option value="">Selecione</option>';
-            categorias[t.tipo].forEach(cat => {
-                select.innerHTML += `<option value="${cat}" ${cat === t.categoria ? 'selected' : ''}>${cat}</option>`;
-            });
+    document.getElementById('modalTransacao').classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+}
 
-            document.querySelector(`input[name="statusPagamento"][value="${t.status || 'pago'}"]`).checked = true;
+function fecharModal() {
+    document.getElementById('modalTransacao').classList.add('hidden');
+    document.body.style.overflow = 'auto';
+    document.getElementById('formTransacao').reset();
+}
 
-            document.getElementById('modalTransacao').classList.remove('hidden');
-            document.body.style.overflow = 'hidden';
-        }
+// ✅ BOTÃO SALVAR/ATUALIZAR - CORRIGIDO!
+async function salvarTransacao(e) {
+    e.preventDefault();
+    
+    const tipo = document.getElementById('tipoTransacao').value;
+    const valor = parseFloat(document.getElementById('valor').value);
+    const descricao = document.getElementById('descricao').value;
+    const dataInput = document.getElementById('data').value;
+    const dataFormatada = dataInput.split('-').reverse().join('/');
+    const categoria = document.getElementById('categoria').value;
+    const status = document.querySelector('input[name="statusPagamento"]:checked').value;
+    const idEdicao = document.getElementById('idEdicao').value;
 
-        function fecharModal() {
-            document.getElementById('modalTransacao').classList.add('hidden');
-            document.body.style.overflow = 'auto';
-            document.getElementById('formTransacao').reset();
-        }
+    const dados = {
+        tipo, valor, descricao, data: dataFormatada, categoria, status,
+        origem: 'manual',
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    };
 
-        async function salvarTransacao(e) {
-            e.preventDefault();
-            
-            const tipo = document.getElementById('tipoTransacao').value;
-            const valor = parseFloat(document.getElementById('valor').value);
-            const descricao = document.getElementById('descricao').value;
-            const dataInput = document.getElementById('data').value;
-            const dataFormatada = dataInput.split('-').reverse().join('/');
-            const categoria = document.getElementById('categoria').value;
-            const status = document.querySelector('input[name="statusPagamento"]:checked').value;
-            const idEdicao = document.getElementById('idEdicao').value;
+    if (idEdicao) {
+        // Atualiza existente
+        await db.collection('transacoes').doc(idEdicao).update(dados);
+    } else {
+        // Cria novo
+        dados.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+        await db.collection('transacoes').add(dados);
+    }
+    
+    fecharModal();
+}
 
-            const dados = {
-                tipo, valor, descricao, data: dataFormatada, categoria, status,
-                origem: t.origem || 'manual',
-                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-            };
+async function excluirTransacao() {
+    const id = document.getElementById('idEdicao').value;
+    if (confirm('Tem certeza que deseja excluir esta transação?')) {
+        await db.collection('transacoes').doc(id).delete();
+        fecharModal();
+    }
+}
 
-            if (idEdicao) {
-                await db.collection('transacoes').doc(idEdicao).update(dados);
-            } else {
-                dados.createdAt = firebase.firestore.FieldValue.serverTimestamp();
-                await db.collection('transacoes').add(dados);
-            }
-            
-            fecharModal();
-        }
+// Escuta Firebase
+db.collection('transacoes')
+  .orderBy('createdAt', 'desc')
+  .limit(50)
+  .onSnapshot(snapshot => {
+      listaTransacoesGlobal = [];
+      snapshot.forEach(doc => listaTransacoesGlobal.push({ id: doc.id, ...doc.data() }));
+      atualizarDados(listaTransacoesGlobal);
+  });
 
-        async function excluirTransacao() {
-            const id = document.getElementById('idEdicao').value;
-            if (confirm('Tem certeza que deseja excluir?')) {
-                await db.collection('transacoes').doc(id).delete();
-                fecharModal();
-            }
-        }
+function atualizarDados(transacoes) {
+    let totalReceitas = 0, totalDespesas = 0;
+    transacoes.forEach(t => t.tipo === 'receita' ? totalReceitas += t.valor : totalDespesas += t.valor);
+    const saldo = totalReceitas - totalDespesas;
 
-        // ==============================================
-        // 🔄 DADOS EM TEMPO REAL
-        // ==============================================
-        db.collection('transacoes')
-          .orderBy('createdAt', 'desc')
-          .limit(50)
-          .onSnapshot(snapshot => {
-              listaTransacoesGlobal = [];
-              snapshot.forEach(doc => listaTransacoesGlobal.push({ id: doc.id, ...doc.data() }));
-              atualizarDados(listaTransacoesGlobal);
-          });
+    document.getElementById('totalReceitas').textContent = `R$ ${totalReceitas.toFixed(2).replace('.', ',')}`;
+    document.getElementById('totalDespesas').textContent = `R$ ${totalDespesas.toFixed(2).replace('.', ',')}`;
+    document.getElementById('saldoTotal').textContent = saldo.toFixed(2).replace('.', ',');
 
-        function atualizarDados(transacoes) {
-            let totalReceitas = 0, totalDespesas = 0;
-            transacoes.forEach(t => t.tipo === 'receita' ? totalReceitas += t.valor : totalDespesas += t.valor);
-            const saldo = totalReceitas - totalDespesas;
+    atualizarLista(transacoes);
+}
 
-            document.getElementById('totalReceitas').textContent = `R$ ${totalReceitas.toFixed(2).replace('.', ',')}`;
-            document.getElementById('totalDespesas').textContent = `R$ ${totalDespesas.toFixed(2).replace('.', ',')}`;
-            document.getElementById('saldoTotal').textContent = saldo.toFixed(2).replace('.', ',');
+function atualizarLista(transacoes) {
+    const lista = document.getElementById('listaTransacoes');
+    if (transacoes.length === 0) {
+        lista.innerHTML = `<div class="text-center text-gray-400 py-8"><i class="fa fa-list-alt text-4xl mb-2"></i><p>Nenhuma transação cadastrada</p></div>`;
+        return;
+    }
 
-            atualizarLista(transacoes);
-        }
+    lista.innerHTML = '';
+    transacoes.forEach(t => {
+        const icone = t.tipo === 'receita' ? 'fa-arrow-up' : 'fa-arrow-down';
+        const cor = t.tipo === 'receita' ? 'text-success' : 'text-danger';
+        const origem = t.origem === 'whatsapp' ? '<span class="text-xs text-whatsapp ml-2"><i class="fa fa-whatsapp"></i></span>' : '';
+        const statusIcone = t.status === 'pago' ? '<span class="text-success text-xs ml-2"><i class="fa fa-check-circle"></i></span>' : '<span class="text-warning text-xs ml-2"><i class="fa fa-clock-o"></i></span>';
 
-        function atualizarLista(transacoes) {
-            const lista = document.getElementById('listaTransacoes');
-            
-            if (transacoes.length === 0) {
-                lista.innerHTML = `<div class="text-center text-gray-400 py-8"><i class="fa fa-list-alt text-4xl mb-2"></i><p>Nenhuma transação cadastrada</p></div>`;
-                return;
-            }
+        lista.innerHTML += `
+            <div onclick="abrirEdicao('${t.id}')" class="flex items-center justify-between bg-gray-50 p-4 rounded-xl cursor-pointer hover:bg-gray-100 transition">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full flex items-center justify-center ${cor} bg-opacity-10">
+                        <i class="fa ${icone}"></i>
+                    </div>
+                    <div>
+                        <h4 class="font-medium">${t.descricao} ${origem} ${statusIcone}</h4>
+                        <p class="text-xs text-gray-500">${t.categoria} • ${t.data}</p>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <p class="font-semibold ${cor}">R$ ${t.valor.toFixed(2).replace('.', ',')}</p>
+                </div>
+            </div>`;
+    });
+}
 
-            lista.innerHTML = '';
-            transacoes.forEach(t => {
-                const icone = t.tipo === 'receita' ? 'fa-arrow-up' : 'fa-arrow-down';
-                const cor = t.tipo === 'receita' ? 'text-success' : 'text-danger';
-                const origem = t.origem === 'whatsapp' ? '<span class="text-xs text-whatsapp ml-2"><i class="fa fa-whatsapp"></i></span>' : '';
-                const statusIcone = t.status === 'pago' ? '<span class="text-success text-xs ml-2"><i class="fa fa-check-circle"></i></span>' : '<span class="text-warning text-xs ml-2"><i class="fa fa-clock-o"></i></span>';
-
-                lista.innerHTML += `
-                    <div onclick="abrirEdicao('${t.id}')" class="flex items-center justify-between bg-gray-50 p-4 rounded-xl cursor-pointer hover:bg-gray-100 transition">
-                        <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 rounded-full flex items-center justify-center ${cor} bg-opacity-10">
-                                <i class="fa ${icone}"></i>
-                            </div>
-                            <div>
-                                <h4 class="font-medium">${t.descricao} ${origem} ${statusIcone}</h4>
-                                <p class="text-xs text-gray-500">${t.categoria} • ${t.data}</p>
-                            </div>
-                        </div>
-                        <div class="text-right">
-                            <p class="font-semibold ${cor}">R$ ${t.valor.toFixed(2).replace('.', ',')}</p>
-                        </div>
-                    </div>`;
-            });
-        }
-
-        document.getElementById('modalTransacao').addEventListener('click', e => e.target === this && fecharModal());
-        document.getElementById('modalWhatsapp').addEventListener('click', e => e.target === this && fecharModalWhatsapp());
+document.getElementById('modalTransacao').addEventListener('click', e => e.target.id === 'modalTransacao' && fecharModal());
+document.getElementById('modalWhatsapp').addEventListener('click', e => e.target.id === 'modalWhatsapp' && fecharModalWhatsapp());
     </script>
 </body>
 </html>
