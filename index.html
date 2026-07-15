@@ -38,26 +38,26 @@
             .no-select { -webkit-user-select: none; user-select: none; }
             .scrollbar-hide::-webkit-scrollbar { display: none; }
         }
-
         html, body { overscroll-behavior: none; touch-action: pan-x pan-y; }
 
-        /* FORÇA ALINHAMENTO ESQUERDA NO IPHONE/SAFARI */
-        input[type="date"] {
-            text-align: left !important;
-            direction: ltr !important;
-            padding-left: 16px !important;
-            position: relative;
-        }
-        input[type="date"]::-webkit-datetime-edit {
-            text-align: left !important;
-            padding: 0 !important;
-            padding-left: 0 !important;
-        }
-        input[type="date"]::-webkit-calendar-picker-indicator {
+        /* ESCONDE O CAMPO NATIVO MAS MANTEM FUNCIONAL */
+        .campo-data-wrapper { position: relative; }
+        .campo-data-wrapper input[type="date"] {
             position: absolute;
-            right: 12px;
-            top: 50%;
-            transform: translateY(-50%);
+            opacity: 0;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+            z-index: 2;
+        }
+        /* CAMPO VISUAL ALINHADO À ESQUERDA */
+        .data-visual {
+            pointer-events: none;
+            text-align: left !important;
+            padding-left: 1rem !important;
+            color: #1E2129;
         }
     </style>
 </head>
@@ -135,9 +135,14 @@
                         <input type="text" id="descricao" class="w-full border border-gray-200 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-primary/40" required>
                     </div>
 
+                    <!-- CAMPO DATA PERSONALIZADO - AGORA VAI FICAR CERTO! -->
                     <div class="mb-4">
                         <label class="block text-sm font-medium text-gray-600 mb-1">Data</label>
-                        <input type="date" id="data" class="w-full border border-gray-200 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-primary/40" required>
+                        <div class="campo-data-wrapper w-full border border-gray-200 rounded-xl p-3 focus-within:ring-2 focus-within:ring-primary/40 relative">
+                            <div id="dataVisual" class="data-visual">Selecione uma data</div>
+                            <input type="date" id="data" required onchange="atualizarDataVisual(this)">
+                            <i class="fa fa-calendar absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"></i>
+                        </div>
                     </div>
 
                     <div class="mb-4">
@@ -214,6 +219,19 @@ const categorias = {
 
 let listaTransacoesGlobal = [];
 
+// ATUALIZA O TEXTO VISUAL DA DATA
+function atualizarDataVisual(campo) {
+    const visual = document.getElementById('dataVisual');
+    if (campo.value) {
+        const [ano, mes, dia] = campo.value.split('-');
+        visual.textContent = `${dia}/${mes}/${ano}`;
+        visual.classList.remove('text-gray-400');
+    } else {
+        visual.textContent = 'Selecione uma data';
+        visual.classList.add('text-gray-400');
+    }
+}
+
 function abrirModalWhatsapp() {
     document.getElementById('modalWhatsapp').classList.remove('hidden');
     document.body.style.overflow = 'hidden';
@@ -233,6 +251,7 @@ function abrirModal(tipo) {
 
     const hoje = new Date().toISOString().split('T')[0];
     document.getElementById('data').value = hoje;
+    atualizarDataVisual(document.getElementById('data'));
 
     const select = document.getElementById('categoria');
     select.innerHTML = '<option value="">Selecione</option>';
@@ -257,7 +276,9 @@ function abrirEdicao(id) {
     document.getElementById('descricao').value = t.descricao;
 
     const dataParts = t.data.split('/');
-    document.getElementById('data').value = `${dataParts[2]}-${dataParts[1]}-${dataParts[0]}`;
+    const dataFormatada = `${dataParts[2]}-${dataParts[1]}-${dataParts[0]}`;
+    document.getElementById('data').value = dataFormatada;
+    atualizarDataVisual(document.getElementById('data'));
 
     const select = document.getElementById('categoria');
     select.innerHTML = '<option value="">Selecione</option>';
@@ -275,6 +296,7 @@ function fecharModal() {
     document.getElementById('modalTransacao').classList.add('hidden');
     document.body.style.overflow = 'auto';
     document.getElementById('formTransacao').reset();
+    atualizarDataVisual({value: ''});
 }
 
 async function salvarTransacao(e) {
