@@ -17,7 +17,7 @@
                 extend: {
                     colors: {
                         primary: '#2563EB',
-                        primaryLight: '#BFDBFE', // Azul clarinho
+                        primaryLight: '#BFDBFE',
                         success: '#16A34A',
                         danger: '#DC2626',
                         warning: '#F59E0B',
@@ -41,29 +41,20 @@
         }
         html, body { overscroll-behavior: none; touch-action: pan-x pan-y; }
 
-        /* CAMPO DATA PERSONALIZADO */
         .campo-data-wrapper { position: relative; }
         .campo-data-wrapper input[type="date"] {
-            position: absolute;
-            opacity: 0;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            cursor: pointer;
-            z-index: 2;
+            position: absolute; opacity: 0; top: 0; left: 0;
+            width: 100%; height: 100%; cursor: pointer; z-index: 2;
         }
         .data-visual {
-            pointer-events: none;
-            text-align: left !important;
-            padding-left: 1rem !important;
-            color: #1E293B;
+            pointer-events: none; text-align: left !important;
+            padding-left: 1rem !important; color: #1E293B;
         }
     </style>
 </head>
 <body class="bg-gray-50 font-inter text-gray-800 no-select">
     <div class="max-w-md mx-auto bg-white min-h-screen shadow-lg">
-        <!-- CABEÇALHO AZUL MAIS COMPACTO -->
+        <!-- CABEÇALHO -->
         <header class="bg-primary text-white px-5 pt-6 pb-6 rounded-b-3xl">
             <div class="flex justify-between items-center mb-4">
                 <h1 class="text-lg font-bold">Minhas Finanças</h1>
@@ -72,23 +63,31 @@
                 </button>
             </div>
 
-            <!-- SALDO TOTAL COM FUNDO AZUL CLARINHO -->
+            <!-- SELETOR DE MÊS -->
+            <div class="flex items-center justify-center gap-4 mb-4">
+                <button onclick="mesAnterior()" class="text-white/90 text-lg hover:text-white transition">
+                    <i class="fa fa-chevron-left"></i>
+                </button>
+                <h2 id="nomeMesAtual" class="text-lg font-semibold">Julho / 2026</h2>
+                <button onclick="proximoMes()" class="text-white/90 text-lg hover:text-white transition">
+                    <i class="fa fa-chevron-right"></i>
+                </button>
+            </div>
+
+            <!-- SALDO -->
             <div class="bg-primaryLight/30 rounded-xl p-4 mb-4">
                 <p class="text-white/90 text-sm">Saldo Total</p>
                 <h2 class="text-3xl font-bold mt-0.5">R$ <span id="saldoTotal">0,00</span></h2>
                 <p class="text-white/80 text-xs mt-0.5">Sobra: R$ <span id="valorSobra">0,00</span></p>
             </div>
 
-            <!-- CARDS BRANCOS COMPACTOS DENTRO DO AZUL -->
+            <!-- CARDS -->
             <div class="grid grid-cols-2 gap-3">
-                <!-- RECEITAS -->
                 <div class="bg-white rounded-lg p-3.5 text-dark">
                     <p class="text-sm font-medium mb-0.5">Receitas Recebidas</p>
                     <p class="text-xl font-bold text-success">R$ <span id="receitasPagas">0,00</span></p>
                     <p class="text-gray-600 text-xs mt-0.5">Total: R$ <span id="receitasTotal">0,00</span></p>
                 </div>
-
-                <!-- DESPESAS -->
                 <div class="bg-white rounded-lg p-3.5 text-dark">
                     <p class="text-sm font-medium mb-0.5">Despesas Pagas</p>
                     <p class="text-xl font-bold text-danger">R$ <span id="despesasPagas">0,00</span></p>
@@ -97,7 +96,7 @@
             </div>
         </header>
 
-        <!-- BOTÕES MENORES -->
+        <!-- BOTÕES -->
         <div class="px-5 mt-5">
             <div class="grid grid-cols-2 gap-3">
                 <button onclick="abrirModal('receita')" class="bg-success text-white rounded-lg p-3 shadow-sm flex items-center justify-center gap-1.5 text-sm font-medium">
@@ -109,43 +108,37 @@
             </div>
         </div>
 
+        <!-- LISTA -->
         <div class="px-5 mt-6">
             <div class="flex justify-between items-center mb-3">
                 <h3 class="text-base font-semibold">Transações Recentes</h3>
                 <a href="#" class="text-primary text-xs font-medium">Ver Todas</a>
             </div>
-
             <div id="listaTransacoes" class="space-y-2 max-h-[400px] overflow-y-auto scrollbar-hide">
-                <div class="text-center text-gray-400 py-6">
-                    <i class="fa fa-list-alt text-2xl mb-1"></i>
-                    <p class="text-sm">Nenhuma transação cadastrada</p>
-                </div>
+                <div class="text-center text-gray-400 py-6"><i class="fa fa-list-alt text-2xl mb-1"></i><p class="text-sm">Nenhuma transação cadastrada</p></div>
             </div>
         </div>
 
-        <!-- Modal Cadastro/Edição -->
+        <!-- MODAL CADASTRO -->
         <div id="modalTransacao" class="fixed inset-0 bg-black/60 flex items-end justify-center z-50 hidden">
             <div class="bg-white rounded-t-3xl w-full max-w-md p-5">
                 <div class="flex justify-between items-center mb-4">
                     <h3 id="tituloModal" class="text-lg font-bold">Nova Transação</h3>
                     <button onclick="fecharModal()" class="text-gray-500 text-lg"><i class="fa fa-times"></i></button>
                 </div>
-
                 <form id="formTransacao" onsubmit="salvarTransacao(event)">
                     <input type="hidden" id="tipoTransacao" value="">
                     <input type="hidden" id="idEdicao" value="">
+                    <input type="hidden" id="grupoId" value="">
 
                     <div class="mb-3">
                         <label class="block text-sm font-medium text-gray-600 mb-1">Valor (R$)</label>
                         <input type="text" id="valor" class="w-full border border-gray-200 rounded-lg p-2.5 focus:outline-none focus:ring-2 focus:ring-primary/40" placeholder="0,00" required oninput="mascaraValor(this)">
                     </div>
-
                     <div class="mb-3">
                         <label class="block text-sm font-medium text-gray-600 mb-1">Descrição</label>
                         <input type="text" id="descricao" class="w-full border border-gray-200 rounded-lg p-2.5 focus:outline-none focus:ring-2 focus:ring-primary/40" required>
                     </div>
-
-                    <!-- CAMPO DATA -->
                     <div class="mb-3">
                         <label class="block text-sm font-medium text-gray-600 mb-1">Data</label>
                         <div class="campo-data-wrapper w-full border border-gray-200 rounded-lg p-2.5 focus-within:ring-2 focus-within:ring-primary/40 relative">
@@ -154,12 +147,29 @@
                             <i class="fa fa-calendar absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"></i>
                         </div>
                     </div>
-
                     <div class="mb-3">
                         <label class="block text-sm font-medium text-gray-600 mb-1">Categoria</label>
                         <select id="categoria" class="w-full border border-gray-200 rounded-lg p-2.5 focus:outline-none focus:ring-2 focus:ring-primary/40" required>
                             <option value="">Selecione</option>
                         </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="block text-sm font-medium text-gray-600 mb-1.5">Tipo de Lançamento</label>
+                        <div class="grid grid-cols-2 gap-2.5 mb-2.5">
+                            <label class="flex items-center justify-center gap-1.5 border border-primary text-primary rounded-lg p-2.5 cursor-pointer hover:bg-primary/5 transition has-[:checked]:bg-primary has-[:checked]:text-white">
+                                <input type="radio" name="tipoLancamento" value="parcelado" class="hidden" checked onclick="mostrarCampoParcelas()">
+                                <i class="fa fa-calendar"></i> Parcelado
+                            </label>
+                            <label class="flex items-center justify-center gap-1.5 border border-primary text-primary rounded-lg p-2.5 cursor-pointer hover:bg-primary/5 transition has-[:checked]:bg-primary has-[:checked]:text-white">
+                                <input type="radio" name="tipoLancamento" value="fixo" class="hidden" onclick="mostrarCampoParcelas()">
+                                <i class="fa fa-refresh"></i> Fixo
+                            </label>
+                        </div>
+                        <div id="campoParcelas" class="mt-2">
+                            <label class="block text-sm font-medium text-gray-600 mb-1">Quantidade de Parcelas</label>
+                            <input type="number" id="qtdParcelas" min="2" max="99" class="w-full border border-gray-200 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-primary/40" placeholder="Ex: 3">
+                        </div>
                     </div>
 
                     <div class="mb-4">
@@ -177,7 +187,7 @@
                     </div>
 
                     <div class="flex gap-2.5">
-                        <button type="button" id="btnExcluir" onclick="excluirTransacao()" class="hidden bg-danger/10 text-danger hover:bg-danger/20 font-medium rounded-lg p-2.5 transition">
+                        <button type="button" id="btnExcluir" onclick="abrirOpcoesExclusao()" class="hidden bg-danger/10 text-danger hover:bg-danger/20 font-medium rounded-lg p-2.5 transition">
                             <i class="fa fa-trash"></i>
                         </button>
                         <button type="submit" id="btnSalvar" class="flex-1 bg-primary hover:bg-primary/90 text-white font-medium rounded-lg p-2.5 transition">Salvar Transação</button>
@@ -186,13 +196,30 @@
             </div>
         </div>
 
-        <!-- Modal WhatsApp -->
+        <!-- MODAL OPÇÕES EXCLUSÃO -->
+        <div id="modalExcluir" class="fixed inset-0 bg-black/60 flex items-center justify-center z-50 hidden">
+            <div class="bg-white rounded-2xl w-full max-w-sm p-5 mx-4">
+                <h3 class="text-lg font-bold mb-4 text-center">O que deseja excluir?</h3>
+                <div class="space-y-2">
+                    <button onclick="excluirApenasEsta()" class="w-full text-left p-3 border border-gray-200 rounded-lg hover:bg-gray-50">
+                        <i class="fa fa-file-text-o mr-2"></i> Apenas esta parcela
+                    </button>
+                    <button onclick="excluirEFuturas()" class="w-full text-left p-3 border border-gray-200 rounded-lg hover:bg-gray-50">
+                        <i class="fa fa-calendar-o mr-2"></i> Esta e todas as futuras
+                    </button>
+                    <button onclick="excluirTodasGrupo()" class="w-full text-left p-3 border border-danger/30 text-danger rounded-lg hover:bg-danger/5">
+                        <i class="fa fa-trash mr-2"></i> Todas as parcelas
+                    </button>
+                </div>
+                <button onclick="fecharModalExcluir()" class="w-full mt-4 p-2 text-gray-500 hover:text-gray-700">Cancelar</button>
+            </div>
+        </div>
+
+        <!-- MODAL WHATSAPP -->
         <div id="modalWhatsapp" class="fixed inset-0 bg-black/60 flex items-end justify-center z-50 hidden">
             <div class="bg-white rounded-t-3xl w-full max-w-md p-5">
                 <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-lg font-bold flex items-center gap-2">
-                        <i class="fa fa-whatsapp text-whatsapp"></i> Gastos via WhatsApp
-                    </h3>
+                    <h3 class="text-lg font-bold flex items-center gap-2"><i class="fa fa-whatsapp text-whatsapp"></i> Gastos via WhatsApp</h3>
                     <button onclick="fecharModalWhatsapp()" class="text-gray-500 text-lg"><i class="fa fa-times"></i></button>
                 </div>
                 <div class="space-y-3 text-gray-600 text-sm">
@@ -226,64 +253,103 @@ const categorias = {
     receita: ['Salário', 'Vendas', 'Investimentos', 'Outros'],
     despesa: ['Alimentação', 'Moradia', 'Transporte', 'Lazer', 'Saúde', 'Educação', 'Outros']
 };
+const meses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
 
+let dataAtual = new Date();
+let mesSelecionado = dataAtual.getMonth();
+let anoSelecionado = dataAtual.getFullYear();
 let listaTransacoesGlobal = [];
+let grupoIdAtual = '';
 
 // ==============================================
-// ✅ FUNÇÕES DE FORMATAÇÃO
+// ✅ FUNÇÕES AUXILIARES
 // ==============================================
-
-function mascaraValor(campo) {
-    let valor = campo.value.replace(/\D/g, '');
-    valor = (valor / 100).toFixed(2) + '';
-    valor = valor.replace('.', ',');
-    valor = valor.replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1.');
-    campo.value = valor;
+function gerarGrupoId() {
+    return Date.now().toString(36) + Math.random().toString(36).substr(2);
 }
 
-function valorParaNumero(valorStr) {
-    return parseFloat(valorStr.replace(/\./g, '').replace(',', '.'));
+function somarMes(dataStr, qtdMeses) {
+    const [dia, mes, ano] = dataStr.split('/').map(Number);
+    const novaData = new Date(ano, mes - 1, dia);
+    novaData.setMonth(novaData.getMonth() + qtdMeses);
+    return `${String(novaData.getDate()).padStart(2,'0')}/${String(novaData.getMonth()+1).padStart(2,'0')}/${novaData.getFullYear()}`;
 }
 
-function formatarValor(valor) {
-    return valor.toLocaleString('pt-BR', {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2
-    });
-}
-
-function atualizarDataVisual(campo) {
-    const visual = document.getElementById('dataVisual');
-    if (campo.value) {
-        const [ano, mes, dia] = campo.value.split('-');
-        visual.textContent = `${dia}/${mes}/${ano}`;
-        visual.classList.remove('text-gray-400');
+function mostrarCampoParcelas() {
+    const tipo = document.querySelector('input[name="tipoLancamento"]:checked').value;
+    const campo = document.getElementById('campoParcelas');
+    const input = document.getElementById('qtdParcelas');
+    if (tipo === 'parcelado') {
+        campo.classList.remove('hidden');
+        input.required = true;
     } else {
-        visual.textContent = 'Selecione uma data';
-        visual.classList.add('text-gray-400');
+        campo.classList.add('hidden');
+        input.required = false;
+        input.value = '';
     }
 }
 
-function abrirModalWhatsapp() {
-    document.getElementById('modalWhatsapp').classList.remove('hidden');
-    document.body.style.overflow = 'hidden';
+// ==============================================
+// ✅ FUNÇÕES DE MÊS
+// ==============================================
+function atualizarNomeMes() {
+    document.getElementById('nomeMesAtual').textContent = `${meses[mesSelecionado]} / ${anoSelecionado}`;
+    filtrarTransacoesPorMes();
 }
-function fecharModalWhatsapp() {
-    document.getElementById('modalWhatsapp').classList.add('hidden');
-    document.body.style.overflow = 'auto';
+function mesAnterior() {
+    mesSelecionado--; if (mesSelecionado < 0) { mesSelecionado=11; anoSelecionado--; }
+    atualizarNomeMes();
 }
+function proximoMes() {
+    mesSelecionado++; if (mesSelecionado > 11) { mesSelecionado=0; anoSelecionado++; }
+    atualizarNomeMes();
+}
+function filtrarTransacoesPorMes() {
+    const filtradas = listaTransacoesGlobal.filter(t => {
+        const [d, m, a] = t.data.split('/').map(Number);
+        return m === mesSelecionado+1 && a === anoSelecionado;
+    });
+    atualizarDados(filtradas);
+}
+
+// ==============================================
+// ✅ FORMATAÇÃO
+// ==============================================
+function mascaraValor(campo) {
+    let v = campo.value.replace(/\D/g,'');
+    v = (v/100).toFixed(2) + '';
+    v = v.replace('.', ',').replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1.');
+    campo.value = v;
+}
+function valorParaNumero(s) { return parseFloat(s.replace(/\./g,'').replace(',','.')); }
+function formatarValor(n) { return n.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function atualizarDataVisual(c) {
+    const v = document.getElementById('dataVisual');
+    if (c.value) {
+        const [a,m,d] = c.value.split('-');
+        v.textContent = `${d}/${m}/${a}`; v.classList.remove('text-gray-400');
+    } else { v.textContent='Selecione uma data'; v.classList.add('text-gray-400'); }
+}
+
+// ==============================================
+// ✅ MODAIS
+// ==============================================
+function abrirModalWhatsapp() { document.getElementById('modalWhatsapp').classList.remove('hidden'); document.body.style.overflow='hidden'; }
+function fecharModalWhatsapp() { document.getElementById('modalWhatsapp').classList.add('hidden'); document.body.style.overflow='auto'; }
+function fecharModal() { document.getElementById('modalTransacao').classList.add('hidden'); document.body.style.overflow='auto'; document.getElementById('formTransacao').reset(); atualizarDataVisual({value:''}); }
+function fecharModalExcluir() { document.getElementById('modalExcluir').classList.add('hidden'); }
 
 function abrirModal(tipo) {
     fecharModal();
     document.getElementById('tipoTransacao').value = tipo;
     document.getElementById('idEdicao').value = '';
-    document.getElementById('tituloModal').textContent = tipo === 'receita' ? 'Nova Receita' : 'Nova Despesa';
+    document.getElementById('grupoId').value = '';
+    document.getElementById('tituloModal').textContent = tipo==='receita' ? 'Nova Receita' : 'Nova Despesa';
     document.getElementById('btnExcluir').classList.add('hidden');
     document.getElementById('btnSalvar').textContent = 'Salvar Transação';
-
-    document.getElementById('textoStatus').textContent = tipo === 'receita' ? 'Recebida' : 'Pago';
-    document.getElementById('textoStatusPendente').textContent = tipo === 'receita' ? 'A Receber' : 'A Pagar';
-
+    document.getElementById('textoStatus').textContent = tipo==='receita' ? 'Recebida' : 'Pago';
+    document.getElementById('textoStatusPendente').textContent = tipo==='receita' ? 'A Receber' : 'A Pagar';
+    
     const hoje = new Date().toISOString().split('T')[0];
     document.getElementById('data').value = hoje;
     atualizarDataVisual(document.getElementById('data'));
@@ -291,167 +357,188 @@ function abrirModal(tipo) {
 
     const select = document.getElementById('categoria');
     select.innerHTML = '<option value="">Selecione</option>';
-    categorias[tipo].forEach(cat => select.innerHTML += `<option value="${cat}">${cat}</option>`);
+    categorias[tipo].forEach(c => select.innerHTML += `<option value="${c}">${c}</option>`);
 
     document.querySelector('input[name="statusPagamento"][value="pago"]').checked = true;
+    document.querySelector('input[name="tipoLancamento"][value="parcelado"]').checked = true;
+    mostrarCampoParcelas();
     document.getElementById('modalTransacao').classList.remove('hidden');
-    document.body.style.overflow = 'hidden';
+    document.body.style.overflow='hidden';
 }
 
 function abrirEdicao(id) {
-    const t = listaTransacoesGlobal.find(item => item.id === id);
-    if(!t) return;
+    const t = listaTransacoesGlobal.find(x => x.id === id);
+    if (!t) return;
+    grupoIdAtual = t.grupoId || '';
 
     document.getElementById('tipoTransacao').value = t.tipo;
     document.getElementById('idEdicao').value = id;
+    document.getElementById('grupoId').value = grupoIdAtual;
     document.getElementById('tituloModal').textContent = 'Editar Transação';
     document.getElementById('btnExcluir').classList.remove('hidden');
     document.getElementById('btnSalvar').textContent = 'Atualizar';
 
-    document.getElementById('textoStatus').textContent = t.tipo === 'receita' ? 'Recebida' : 'Pago';
-    document.getElementById('textoStatusPendente').textContent = t.tipo === 'receita' ? 'A Receber' : 'A Pagar';
+    document.getElementById('textoStatus').textContent = t.tipo==='receita' ? 'Recebida' : 'Pago';
+    document.getElementById('textoStatusPendente').textContent = t.tipo==='receita' ? 'A Receber' : 'A Pagar';
 
     document.getElementById('valor').value = formatarValor(t.valor);
     document.getElementById('descricao').value = t.descricao;
-
-    const dataParts = t.data.split('/');
-    const dataFormatada = `${dataParts[2]}-${dataParts[1]}-${dataParts[0]}`;
-    document.getElementById('data').value = dataFormatada;
+    const [d,m,a] = t.data.split('/');
+    document.getElementById('data').value = `${a}-${m}-${d}`;
     atualizarDataVisual(document.getElementById('data'));
 
     const select = document.getElementById('categoria');
     select.innerHTML = '<option value="">Selecione</option>';
-    categorias[t.tipo].forEach(cat => {
-        select.innerHTML += `<option value="${cat}" ${cat === t.categoria ? 'selected' : ''}>${cat}</option>`;
-    });
+    categorias[t.tipo].forEach(c => select.innerHTML += `<option value="${c}" ${c===t.categoria?'selected':''}>${c}</option>`);
 
-    document.querySelector(`input[name="statusPagamento"][value="${t.status || 'pendente'}"]`).checked = true;
+    document.querySelector(`input[name="statusPagamento"][value="${t.status}"]`).checked = true;
+    document.querySelector(`input[name="tipoLancamento"][value="${t.tipoLancamento}"]`).checked = true;
+    document.getElementById('qtdParcelas').value = t.qtdParcelas || '';
+    mostrarCampoParcelas();
 
     document.getElementById('modalTransacao').classList.remove('hidden');
-    document.body.style.overflow = 'hidden';
+    document.body.style.overflow='hidden';
 }
 
-function fecharModal() {
-    document.getElementById('modalTransacao').classList.add('hidden');
-    document.body.style.overflow = 'auto';
-    document.getElementById('formTransacao').reset();
-    atualizarDataVisual({value: ''});
-}
-
+// ==============================================
+// ✅ SALVAR E GERAR PARCELAS AUTOMÁTICAS
+// ==============================================
 async function salvarTransacao(e) {
     e.preventDefault();
-    
     const tipo = document.getElementById('tipoTransacao').value;
     const valor = valorParaNumero(document.getElementById('valor').value);
     const descricao = document.getElementById('descricao').value;
-    const dataInput = document.getElementById('data').value;
-    const dataFormatada = dataInput.split('-').reverse().join('/');
+    const data = document.getElementById('data').value.split('-').reverse().join('/');
     const categoria = document.getElementById('categoria').value;
     const status = document.querySelector('input[name="statusPagamento"]:checked').value;
+    const tipoLanc = document.querySelector('input[name="tipoLancamento"]:checked').value;
+    const qtd = tipoLanc==='parcelado' ? parseInt(document.getElementById('qtdParcelas').value) : 24;
     const idEdicao = document.getElementById('idEdicao').value;
-
-    const dados = {
-        tipo, valor, descricao, data: dataFormatada, categoria, status,
-        origem: 'manual',
-        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-    };
+    const grupoId = idEdicao ? document.getElementById('grupoId').value : gerarGrupoId();
 
     if (idEdicao) {
-        await db.collection('transacoes').doc(idEdicao).update(dados);
+        // Edição: Atualiza só esta ou todo grupo?
+        await db.collection('transacoes').doc(idEdicao).update({
+            tipo, valor, descricao, data, categoria, status, tipoLanc, qtdParcelas: qtd, grupoId,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
     } else {
-        dados.createdAt = firebase.firestore.FieldValue.serverTimestamp();
-        await db.collection('transacoes').add(dados);
+        // CRIA TODAS AS PARCELAS/MESES AUTOMATICAMENTE
+        const lote = db.batch();
+        for (let i=0; i<qtd; i++) {
+            const dataParcela = somarMes(data, i);
+            lote.create(db.collection('transacoes').doc(), {
+                tipo, valor, descricao, data: dataParcela, categoria,
+                status: i===0 ? status : 'pendente',
+                tipoLancamento: tipoLanc,
+                qtdParcelas: tipoLanc==='parcelado' ? qtd : null,
+                parcelaAtual: tipoLanc==='parcelado' ? `${i+1}/${qtd}` : null,
+                grupoId,
+                origem: 'manual',
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+        }
+        await lote.commit();
     }
-    
     fecharModal();
 }
 
-async function excluirTransacao() {
+// ==============================================
+// ✅ SISTEMA DE EXCLUSÃO INTELIGENTE
+// ==============================================
+function abrirOpcoesExclusao() {
+    fecharModal();
+    document.getElementById('modalExcluir').classList.remove('hidden');
+}
+
+async function excluirApenasEsta() {
     const id = document.getElementById('idEdicao').value;
-    if (confirm('Tem certeza que deseja excluir esta transação?')) {
-        await db.collection('transacoes').doc(id).delete();
-        fecharModal();
-    }
+    await db.collection('transacoes').doc(id).delete();
+    fecharModalExcluir();
 }
 
-db.collection('transacoes')
-  .orderBy('createdAt', 'desc')
-  .limit(50)
-  .onSnapshot(snapshot => {
-      listaTransacoesGlobal = [];
-      snapshot.forEach(doc => listaTransacoesGlobal.push({ id: doc.id, ...doc.data() }));
-      atualizarDados(listaTransacoesGlobal);
-  });
+async function excluirEFuturas() {
+    const id = document.getElementById('idEdicao').value;
+    const grupo = document.getElementById('grupoId').value;
+    const dataAtualParc = listaTransacoesGlobal.find(t => t.id === id).data;
+    
+    const excluir = listaTransacoesGlobal.filter(t => 
+        t.grupoId === grupo && t.data >= dataAtualParc
+    );
+    const lote = db.batch();
+    excluir.forEach(t => lote.delete(db.collection('transacoes').doc(t.id)));
+    await lote.commit();
+    fecharModalExcluir();
+}
+
+async function excluirTodasGrupo() {
+    const grupo = document.getElementById('grupoId').value;
+    const excluir = listaTransacoesGlobal.filter(t => t.grupoId === grupo);
+    const lote = db.batch();
+    excluir.forEach(t => lote.delete(db.collection('transacoes').doc(t.id)));
+    await lote.commit();
+    fecharModalExcluir();
+}
 
 // ==============================================
-// ✅ LÓGICA COM VALOR DE SOBRA
+// ✅ CARREGAR E EXIBIR DADOS
 // ==============================================
-function atualizarDados(transacoes) {
-    let totalReceitasGeral = 0;
-    let receitasJaRecebidas = 0;
-    let totalDespesasGeral = 0;
-    let despesasJaPagas = 0;
+db.collection('transacoes').orderBy('createdAt','desc').limit(200).onSnapshot(snap => {
+    listaTransacoesGlobal = [];
+    snap.forEach(d => listaTransacoesGlobal.push({id:d.id, ...d.data()}));
+    filtrarTransacoesPorMes();
+});
 
-    transacoes.forEach(t => {
-        if (t.tipo === 'receita') {
-            totalReceitasGeral += t.valor;
-            if (t.status === 'pago') receitasJaRecebidas += t.valor;
-        } else {
-            totalDespesasGeral += t.valor;
-            if (t.status === 'pago') despesasJaPagas += t.valor;
-        }
+function atualizarDados(lista) {
+    let recTotal=0, recPago=0, desTotal=0, desPago=0;
+    lista.forEach(t => {
+        if (t.tipo==='receita') { recTotal+=t.valor; if(t.status==='pago') recPago+=t.valor; }
+        else { desTotal+=t.valor; if(t.status==='pago') desPago+=t.valor; }
     });
-
-    const saldoTotal = receitasJaRecebidas - despesasJaPagas;
-    const valorSobra = totalReceitasGeral - totalDespesasGeral;
-
-    document.getElementById('saldoTotal').textContent = formatarValor(saldoTotal);
-    document.getElementById('valorSobra').textContent = formatarValor(valorSobra);
-    document.getElementById('receitasPagas').textContent = formatarValor(receitasJaRecebidas);
-    document.getElementById('receitasTotal').textContent = formatarValor(totalReceitasGeral);
-    document.getElementById('despesasPagas').textContent = formatarValor(despesasJaPagas);
-    document.getElementById('despesasTotal').textContent = formatarValor(totalDespesasGeral);
-
-    atualizarLista(transacoes);
+    document.getElementById('saldoTotal').textContent = formatarValor(recPago - desPago);
+    document.getElementById('valorSobra').textContent = formatarValor(recTotal - desTotal);
+    document.getElementById('receitasPagas').textContent = formatarValor(recPago);
+    document.getElementById('receitasTotal').textContent = formatarValor(recTotal);
+    document.getElementById('despesasPagas').textContent = formatarValor(desPago);
+    document.getElementById('despesasTotal').textContent = formatarValor(desTotal);
+    atualizarLista(lista);
 }
 
-function atualizarLista(transacoes) {
-    const lista = document.getElementById('listaTransacoes');
-    if (transacoes.length === 0) {
-        lista.innerHTML = `<div class="text-center text-gray-400 py-6"><i class="fa fa-list-alt text-2xl mb-1"></i><p class="text-sm">Nenhuma transação cadastrada</p></div>`;
+function atualizarLista(lista) {
+    const el = document.getElementById('listaTransacoes');
+    if (!lista.length) {
+        el.innerHTML = `<div class="text-center text-gray-400 py-6"><i class="fa fa-list-alt text-2xl mb-1"></i><p class="text-sm">Nenhuma transação cadastrada</p></div>`;
         return;
     }
+    el.innerHTML = '';
+    lista.forEach(t => {
+        const icone = t.tipo==='receita' ? 'fa-arrow-up' : 'fa-arrow-down';
+        const cor = t.tipo==='receita' ? 'text-success' : 'text-danger';
+        const tipoInfo = t.tipoLancamento==='fixo' 
+            ? '<span class="text-xs text-primary ml-1"><i class="fa fa-refresh"></i> Fixo</span>'
+            : t.parcelaAtual ? `<span class="text-xs text-primary ml-1">${t.parcelaAtual}</span>` : '';
+        const statusTxt = t.tipo==='receita' ? (t.status==='pago'?'Recebida':'A Receber') : (t.status==='pago'?'Pago':'A Pagar');
+        const statusCor = t.status==='pago' ? 'text-success' : 'text-warning';
 
-    lista.innerHTML = '';
-    transacoes.forEach(t => {
-        const icone = t.tipo === 'receita' ? 'fa-arrow-up' : 'fa-arrow-down';
-        const cor = t.tipo === 'receita' ? 'text-success' : 'text-danger';
-        const origem = t.origem === 'whatsapp' ? '<span class="text-xs text-whatsapp ml-1"><i class="fa fa-whatsapp"></i></span>' : '';
-        const statusTexto = t.tipo === 'receita' 
-            ? (t.status === 'pago' ? 'Recebida' : 'A Receber')
-            : (t.status === 'pago' ? 'Pago' : 'A Pagar');
-        const statusCor = t.status === 'pago' ? 'text-success' : 'text-warning';
-
-        lista.innerHTML += `
-            <div onclick="abrirEdicao('${t.id}')" class="flex items-center justify-between bg-gray-50 p-3 rounded-lg cursor-pointer hover:bg-gray-100 transition">
-                <div class="flex items-center gap-2.5">
-                    <div class="w-8 h-8 rounded-full flex items-center justify-center ${cor} bg-opacity-10">
-                        <i class="fa ${icone} text-sm"></i>
-                    </div>
-                    <div>
-                        <h4 class="font-medium text-sm">${t.descricao} ${origem}</h4>
-                        <p class="text-xs text-gray-500">${t.categoria} • ${t.data} • <span class="${statusCor}">${statusTexto}</span></p>
-                    </div>
+        el.innerHTML += `
+        <div onclick="abrirEdicao('${t.id}')" class="flex items-center justify-between bg-gray-50 p-3 rounded-lg cursor-pointer hover:bg-gray-100 transition">
+            <div class="flex items-center gap-2.5">
+                <div class="w-8 h-8 rounded-full flex items-center justify-center ${cor} bg-opacity-10"><i class="fa ${icone} text-sm"></i></div>
+                <div>
+                    <h4 class="font-medium text-sm">${t.descricao} ${tipoInfo}</h4>
+                    <p class="text-xs text-gray-500">${t.categoria} • ${t.data} • <span class="${statusCor}">${statusTxt}</span></p>
                 </div>
-                <div class="text-right">
-                    <p class="font-semibold text-sm ${cor}">R$ ${formatarValor(t.valor)}</p>
-                </div>
-            </div>`;
+            </div>
+            <p class="font-semibold text-sm ${cor}">R$ ${formatarValor(t.valor)}</p>
+        </div>`;
     });
 }
 
-document.getElementById('modalTransacao').addEventListener('click', e => e.target.id === 'modalTransacao' && fecharModal());
-document.getElementById('modalWhatsapp').addEventListener('click', e => e.target.id === 'modalWhatsapp' && fecharModalWhatsapp());
+document.getElementById('modalTransacao').addEventListener('click', e=>e.target.id==='modalTransacao'&&fecharModal());
+document.getElementById('modalExcluir').addEventListener('click', e=>e.target.id==='modalExcluir'&&fecharModalExcluir());
+document.getElementById('modalWhatsapp').addEventListener('click', e=>e.target.id==='modalWhatsapp'&&fecharModalWhatsapp());
+
+atualizarNomeMes();
     </script>
 </body>
 </html>
