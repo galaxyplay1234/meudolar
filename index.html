@@ -119,7 +119,7 @@
             </div>
         </div>
 
-        <!-- MODAL ATUALIZAR OPÇÕES (NOVO) -->
+        <!-- MODAL ATUALIZAR OPÇÕES -->
         <div id="modalOpcoesAtualizar" class="fixed inset-0 bg-black/60 flex items-center justify-center z-50 hidden">
             <div class="bg-white rounded-2xl w-full max-w-sm p-5 mx-4">
                 <h3 class="text-lg font-bold mb-4 text-center">O que deseja atualizar?</h3>
@@ -283,7 +283,7 @@ const meses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julh
 let mesSelecionado = new Date().getMonth();
 let anoSelecionado = new Date().getFullYear();
 let listaTransacoesGlobal = [];
-let dadosTemp = null;
+let dadosTemp = {}; // Inicializa como objeto vazio para não dar erro
 
 // ==============================================
 // ✅ FUNÇÕES AUXILIARES
@@ -362,9 +362,9 @@ function atualizarDataVisual(c) {
 // ==============================================
 function abrirModalWhatsapp() { document.getElementById('modalWhatsapp').classList.remove('hidden'); document.body.style.overflow='hidden'; }
 function fecharModalWhatsapp() { document.getElementById('modalWhatsapp').classList.add('hidden'); document.body.style.overflow='auto'; }
-function fecharModal() { document.getElementById('modalTransacao').classList.add('hidden'); document.body.style.overflow='auto'; document.getElementById('formTransacao').reset(); atualizarDataVisual({value:''}); dadosTemp = null; }
+function fecharModal() { document.getElementById('modalTransacao').classList.add('hidden'); document.body.style.overflow='auto'; document.getElementById('formTransacao').reset(); atualizarDataVisual({value:''}); dadosTemp = {}; }
 function fecharModalExcluir() { document.getElementById('modalExcluir').classList.add('hidden'); }
-function fecharModalOpcoesAtualizar() { document.getElementById('modalOpcoesAtualizar').classList.add('hidden'); }
+function fecharModalOpcoesAtualizar() { document.getElementById('modalOpcoesAtualizar').classList.add('hidden'); dadosTemp = {}; }
 
 function abrirModal(tipo) {
     fecharModal();
@@ -429,7 +429,7 @@ function abrirEdicao(id) {
 }
 
 // ==============================================
-// ✅ SALVAR - AJUSTADO CONFORME PEDIDO
+// ✅ SALVAR - CORRIGIDO O ERRO DE dadosTemp
 // ==============================================
 async function salvarTransacao(e) {
     e.preventDefault();
@@ -456,7 +456,7 @@ async function salvarTransacao(e) {
             const transOriginal = listaTransacoesGlobal.find(t => t.id === idEdicao);
             const tipoOriginal = transOriginal?.tipoLancamento || 'unico';
 
-            // 📌 Se era ÚNICA e CONTINUA ÚNICA: atualiza direto SEM POPUP
+            // Se era ÚNICA e continua ÚNICA: atualiza direto
             if (tipoOriginal === 'unico' && tipoLanc === 'unico') {
                 await db.collection('transacoes').doc(idEdicao).update({
                     tipo, valor, descricao, data: dataBase, categoria, status,
@@ -466,7 +466,7 @@ async function salvarTransacao(e) {
                 return;
             }
 
-            // 📌 Se MUDOU de ÚNICA para FIXA/PARCELADA: transforma corretamente
+            // Se mudou de ÚNICA para FIXA/PARCELADA: cria grupo novo
             if (tipoOriginal === 'unico' && tipoLanc !== 'unico') {
                 await db.collection('transacoes').doc(idEdicao).delete();
                 const novoGrupo = gerarGrupoId();
@@ -488,10 +488,14 @@ async function salvarTransacao(e) {
                 return;
             }
 
-            // 📌 Se já era FIXA/PARCELADA: mostra opções ou usa a escolhida
+            // Se já era FIXA/PARCELADA
             if (tipoOriginal !== 'unico') {
                 if (!modo) {
-                    dadosTemp = { tipoLanc, tipo, valor, descricao, dataBase, categoria, status, qtd, grupoId, idEdicao };
+                    // GUARDA OS DADOS CERTINHO ANTES DE ABRIR O POPUP
+                    dadosTemp = { 
+                        tipoLanc, tipo, valor, descricao, dataBase, 
+                        categoria, status, qtd, grupoId, idEdicao 
+                    };
                     fecharModal();
                     document.getElementById('modalOpcoesAtualizar').classList.remove('hidden');
                     return;
@@ -530,10 +534,13 @@ async function salvarTransacao(e) {
 }
 
 // ==============================================
-// ✅ EXECUTA ATUALIZAÇÃO POR OPÇÃO
+// ✅ EXECUTA ATUALIZAÇÃO - COM VERIFICAÇÃO DE SEGURANÇA
 // ==============================================
 async function executarAtualizacao(modo) {
-    const { tipoLanc, tipo, valor, descricao, dataBase, categoria, status, qtd, grupoId, idEdicao } = dadosTemp;
+    // SE NÃO TIVER DADOS, NÃO FAZ NADA (EVITA O ERRO)
+    if (!dadosTemp || Object.keys(dadosTemp).length === 0) return;
+
+    const { tipo, valor, descricao, dataBase, categoria, status, grupoId, idEdicao } = dadosTemp;
 
     if (modo === 'apenasEsta') {
         await db.collection('transacoes').doc(idEdicao).update({
@@ -548,7 +555,7 @@ async function executarAtualizacao(modo) {
     } else if (modo === 'todas') {
         const atualizar = listaTransacoesGlobal.filter(t => t.grupoId === grupoId);
         const lote = db.batch();
-        atualizar.forEach(t => lote.update(db.collection('transacoes').doc(t.id), { tipo, valor, descricao, data: dataBase, categoria, status }));
+        atualizar.forEach(t => lote.update(db.collection('transacoes').doc(t.id), { tipo, valor, descricao, categoria, status }));
         await lote.commit();
     }
 }
@@ -594,7 +601,7 @@ async function excluirTodasGrupo() {
 }
 
 // ==============================================
-// ✅ CARREGAR DADOS E ORDENAR POR DATA (MAIOR NO TOPO)
+// ✅ CARREGAR DADOS E ORDENAR POR DATA
 // ==============================================
 db.collection('transacoes')
     .orderBy('createdAt', 'desc')
@@ -603,7 +610,6 @@ db.collection('transacoes')
         listaTransacoesGlobal = [];
         snap.forEach(doc => listaTransacoesGlobal.push({ id: doc.id, ...doc.data() }));
         
-        // Ordena por DATA decrescente sempre (mais nova no topo)
         listaTransacoesGlobal.sort((a, b) => {
             const [dA, mA, aA] = a.data.split('/').map(Number);
             const [dB, mB, aB] = b.data.split('/').map(Number);
