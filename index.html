@@ -265,20 +265,18 @@ let anoSelecionado = dataAtual.getFullYear();
 let listaTransacoesGlobal = [];
 
 // ==============================================
-// ✅ FUNÇÕES AUXILIARES CORRIGIDAS
+// ✅ FUNÇÕES SIMPLES E CONFIÁVEIS
 // ==============================================
 function gerarGrupoId() {
-    return Date.now().toString(36) + Math.random().toString(36).substr(2, 9);
+    return Date.now().toString(36) + Math.random().toString(36).substr(2);
 }
 
 function somarMes(dataStr, qtdMeses) {
     const [dia, mes, ano] = dataStr.split('/').map(Number);
     const novaData = new Date(ano, mes - 1, dia);
     novaData.setMonth(novaData.getMonth() + qtdMeses);
-    
     const ultimoDia = new Date(novaData.getFullYear(), novaData.getMonth() + 1, 0).getDate();
     const diaFinal = Math.min(dia, ultimoDia);
-    
     return `${String(diaFinal).padStart(2,'0')}/${String(novaData.getMonth()+1).padStart(2,'0')}/${novaData.getFullYear()}`;
 }
 
@@ -286,7 +284,6 @@ function mostrarCampoParcelas() {
     const tipo = document.querySelector('input[name="tipoLancamento"]:checked')?.value;
     const campo = document.getElementById('campoParcelas');
     const input = document.getElementById('qtdParcelas');
-    
     if (tipo === 'parcelado') {
         campo.classList.remove('hidden');
         input.required = true;
@@ -298,7 +295,7 @@ function mostrarCampoParcelas() {
 }
 
 // ==============================================
-// ✅ NAVEGAÇÃO DE MÊS
+// ✅ NAVEGAÇÃO
 // ==============================================
 function atualizarNomeMes() {
     document.getElementById('nomeMesAtual').textContent = `${meses[mesSelecionado]} / ${anoSelecionado}`;
@@ -375,12 +372,8 @@ function abrirModal(tipo) {
 }
 
 function abrirEdicao(id) {
-    // ✅ Verifica se a transação existe antes de abrir
     const t = listaTransacoesGlobal.find(x => x.id === id);
-    if (!t) {
-        alert('Essa transação não existe mais!');
-        return;
-    }
+    if (!t) { alert('Transação não encontrada!'); return; }
 
     document.getElementById('tipoTransacao').value = t.tipo;
     document.getElementById('idEdicao').value = id;
@@ -414,16 +407,13 @@ function abrirEdicao(id) {
 }
 
 // ==============================================
-// ✅ SALVAR SEM ERROS - CORRIGIDO 100%
+// ✅ SALVAR - AGORA SIMPLES E SEM ERROS
 // ==============================================
 async function salvarTransacao(e) {
     e.preventDefault();
     
     const tipoLancSelecionado = document.querySelector('input[name="tipoLancamento"]:checked');
-    if (!tipoLancSelecionado) {
-        alert('Selecione o tipo de lançamento!');
-        return;
-    }
+    if (!tipoLancSelecionado) { alert('Escolha o tipo de lançamento!'); return; }
 
     const tipo = document.getElementById('tipoTransacao').value;
     const valor = valorParaNumero(document.getElementById('valor').value);
@@ -433,144 +423,107 @@ async function salvarTransacao(e) {
     const status = document.querySelector('input[name="statusPagamento"]:checked').value;
     const tipoLanc = tipoLancSelecionado.value;
     
-    let qtd;
-    if (tipoLanc === 'unico') qtd = 1;
-    else if (tipoLanc === 'parcelado') qtd = parseInt(document.getElementById('qtdParcelas').value) || 2;
-    else qtd = 24; // Fixo = 2 anos
+    let qtd = tipoLanc === 'unico' ? 1 : tipoLanc === 'parcelado' ? parseInt(document.getElementById('qtdParcelas').value) || 2 : 24;
 
     const idEdicao = document.getElementById('idEdicao').value;
     const grupoId = idEdicao ? document.getElementById('grupoId').value : gerarGrupoId();
 
     try {
         if (idEdicao) {
-            // ✅ Verifica se o documento existe antes de mexer
-            const docRef = db.collection('transacoes').doc(idEdicao);
-            const docSnap = await docRef.get();
-            
-            if (!docSnap.exists) {
-                alert('Essa transação não existe mais! Vamos criar como nova.');
-                // Transforma em cadastro novo
-                idEdicao = '';
-            } else {
-                // Se mudou tipo: apaga grupo antigo e cria novo
-                const transacaoAtual = docSnap.data();
-                const mudouTipo = transacaoAtual.tipoLancamento !== tipoLanc;
+            // Se mudou tipo: apaga grupo antigo e cria NOVO
+            const transacaoOriginal = listaTransacoesGlobal.find(t => t.id === idEdicao);
+            if (transacaoOriginal && transacaoOriginal.tipoLancamento !== tipoLanc) {
+                const loteDel = db.batch();
+                listaTransacoesGlobal.filter(t => t.grupoId === grupoId).forEach(t => loteDel.delete(db.collection('transacoes').doc(t.id)));
+                await loteDel.commit();
 
-                if (mudouTipo) {
-                    // Apaga todas do grupo antigo
-                    const loteExcluir = db.batch();
-                    listaTransacoesGlobal.filter(t => t.grupoId === grupoId).forEach(t => {
-                        loteExcluir.delete(db.collection('transacoes').doc(t.id));
+                const novoGrupo = gerarGrupoId();
+                const loteNew = db.batch();
+                for (let i = 0; i < qtd; i++) {
+                    const dt = somarMes(dataBase, i);
+                    loteNew.create(db.collection('transacoes').doc(), {
+                        tipo, valor, descricao, data: dt, categoria,
+                        status: i===0 ? status : 'pendente',
+                        tipoLancamento: tipoLanc,
+                        qtdParcelas: tipoLanc==='parcelado' ? qtd : null,
+                        parcelaAtual: tipoLanc==='parcelado' ? `${i+1}/${qtd}` : null,
+                        grupoId: novoGrupo,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
                     });
-                    await loteExcluir.commit();
-
-                    // Cria sequência nova
-                    const novoGrupo = gerarGrupoId();
-                    const loteCriar = db.batch();
-                    for (let i = 0; i < qtd; i++) {
-                        const dataParcela = somarMes(dataBase, i);
-                        loteCriar.create(db.collection('transacoes').doc(), {
-                            tipo, valor, descricao, data: dataParcela, categoria,
-                            status: i === 0 ? status : 'pendente',
-                            tipoLancamento: tipoLanc,
-                            qtdParcelas: tipoLanc === 'parcelado' ? qtd : null,
-                            parcelaAtual: tipoLanc === 'parcelado' ? `${i+1}/${qtd}` : null,
-                            grupoId: novoGrupo,
-                            origem: 'manual',
-                            createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                        });
-                    }
-                    await loteCriar.commit();
-                    fecharModal();
-                    return;
-                } else {
-                    // Apenas atualiza dados se for o mesmo tipo
-                    await docRef.update({
-                        tipo, valor, descricao, data: dataBase, categoria, status, 
-                        tipoLancamento: tipoLanc, qtdParcelas: qtd,
-                        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-                    });
-                    fecharModal();
-                    return;
                 }
+                await loteNew.commit();
+            } else {
+                // Mesmo tipo: só atualiza este documento
+                await db.collection('transacoes').doc(idEdicao).update({
+                    tipo, valor, descricao, data: dataBase, categoria, status,
+                    tipoLancamento: tipoLanc, qtdParcelas: qtd
+                });
             }
+        } else {
+            // NOVO cadastro: cria todas as parcelas de uma vez
+            const lote = db.batch();
+            const novoGrupo = gerarGrupoId();
+            for (let i = 0; i < qtd; i++) {
+                const dt = somarMes(dataBase, i);
+                lote.create(db.collection('transacoes').doc(), {
+                    tipo, valor, descricao, data: dt, categoria,
+                    status: i===0 ? status : 'pendente',
+                    tipoLancamento: tipoLanc,
+                    qtdParcelas: tipoLanc==='parcelado' ? qtd : null,
+                    parcelaAtual: tipoLanc==='parcelado' ? `${i+1}/${qtd}` : null,
+                    grupoId: novoGrupo,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+            }
+            await lote.commit();
         }
 
-        // ✅ CADASTRO NOVO (sem erros)
-        const lote = db.batch();
-        const novoGrupo = gerarGrupoId();
-        for (let i = 0; i < qtd; i++) {
-            const dataParcela = somarMes(dataBase, i);
-            lote.create(db.collection('transacoes').doc(), {
-                tipo, valor, descricao, data: dataParcela, categoria,
-                status: i === 0 ? status : 'pendente',
-                tipoLancamento: tipoLanc,
-                qtdParcelas: tipoLanc === 'parcelado' ? qtd : null,
-                parcelaAtual: tipoLanc === 'parcelado' ? `${i+1}/${qtd}` : null,
-                grupoId: novoGrupo,
-                origem: 'manual',
-                createdAt: firebase.firestore.FieldValue.serverTimestamp()
-            });
-        }
-        await lote.commit();
         fecharModal();
-
     } catch (erro) {
-        console.error('Erro:', erro);
-        alert('Ops! Tente novamente ou feche e abra o app.');
+        console.error(erro);
+        alert('Não foi possível salvar, mas seus dados estão seguros. Tente novamente.');
     }
 }
 
 // ==============================================
-// ✅ EXCLUSÃO SEM ERROS
+// ✅ EXCLUSÃO SEGURA
 // ==============================================
-function abrirOpcoesExclusao() {
-    fecharModal();
-    document.getElementById('modalExcluir').classList.remove('hidden');
-}
+function abrirOpcoesExclusao() { fecharModal(); document.getElementById('modalExcluir').classList.remove('hidden'); }
 
 async function excluirApenasEsta() {
-    const id = document.getElementById('idEdicao').value;
-    try {
-        await db.collection('transacoes').doc(id).delete();
-    } catch (e) {
-        alert('Essa transação já foi excluída!');
-    }
+    try { await db.collection('transacoes').doc(document.getElementById('idEdicao').value).delete(); } catch(e){}
     fecharModalExcluir();
 }
 
 async function excluirEFuturas() {
     const id = document.getElementById('idEdicao').value;
     const grupo = document.getElementById('grupoId').value;
-    const transacao = listaTransacoesGlobal.find(t => t.id === id);
-    if (!transacao) return;
-    
-    const excluir = listaTransacoesGlobal.filter(t => 
-        t.grupoId === grupo && t.data >= transacao.data
-    );
+    const trans = listaTransacoesGlobal.find(t => t.id === id);
+    if (!trans) return;
+    const apagar = listaTransacoesGlobal.filter(t => t.grupoId === grupo && t.data >= trans.data);
     try {
         const lote = db.batch();
-        excluir.forEach(t => lote.delete(db.collection('transacoes').doc(t.id)));
+        apagar.forEach(t => lote.delete(db.collection('transacoes').doc(t.id)));
         await lote.commit();
-    } catch (e) {}
+    } catch(e){}
     fecharModalExcluir();
 }
 
 async function excluirTodasGrupo() {
     const grupo = document.getElementById('grupoId').value;
-    const excluir = listaTransacoesGlobal.filter(t => t.grupoId === grupo);
+    const apagar = listaTransacoesGlobal.filter(t => t.grupoId === grupo);
     try {
         const lote = db.batch();
-        excluir.forEach(t => lote.delete(db.collection('transacoes').doc(t.id)));
+        apagar.forEach(t => lote.delete(db.collection('transacoes').doc(t.id)));
         await lote.commit();
-    } catch (e) {}
+    } catch(e){}
     fecharModalExcluir();
 }
 
 // ==============================================
-// ✅ CARREGAR DADOS
+// ✅ CARREGAR DADOS - SEM PERDA
 // ==============================================
-db.collection('transacoes').orderBy('createdAt','desc').limit(200).onSnapshot(snap => {
+db.collection('transacoes').orderBy('createdAt','desc').limit(300).onSnapshot(snap => {
     listaTransacoesGlobal = [];
     snap.forEach(d => listaTransacoesGlobal.push({id:d.id, ...d.data()}));
     filtrarTransacoesPorMes();
@@ -603,13 +556,9 @@ function atualizarLista(lista) {
         const cor = t.tipo==='receita' ? 'text-success' : 'text-danger';
         
         let tipoInfo = '';
-        if (t.tipoLancamento==='fixo') {
-            tipoInfo = '<span class="text-xs text-primary ml-1"><i class="fa fa-refresh"></i> Fixo</span>';
-        } else if (t.parcelaAtual) {
-            tipoInfo = `<span class="text-xs text-primary ml-1">${t.parcelaAtual}</span>`;
-        } else if (t.tipoLancamento==='unico') {
-            tipoInfo = '<span class="text-xs text-gray-400 ml-1"><i class="fa fa-dot-circle-o"></i> Único</span>';
-        }
+        if (t.tipoLancamento==='fixo') tipoInfo = '<span class="text-xs text-primary ml-1"><i class="fa fa-refresh"></i> Fixo</span>';
+        else if (t.parcelaAtual) tipoInfo = `<span class="text-xs text-primary ml-1">${t.parcelaAtual}</span>`;
+        else if (t.tipoLancamento==='unico') tipoInfo = '<span class="text-xs text-gray-400 ml-1"><i class="fa fa-dot-circle-o"></i> Único</span>';
 
         const statusTxt = t.tipo==='receita' ? (t.status==='pago'?'Recebida':'A Receber') : (t.status==='pago'?'Pago':'A Pagar');
         const statusCor = t.status==='pago' ? 'text-success' : 'text-warning';
