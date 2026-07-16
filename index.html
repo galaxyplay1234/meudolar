@@ -156,17 +156,21 @@
 
                     <div class="mb-3">
                         <label class="block text-sm font-medium text-gray-600 mb-1.5">Tipo de Lançamento</label>
-                        <div class="grid grid-cols-2 gap-2.5 mb-2.5">
-                            <label class="flex items-center justify-center gap-1.5 border border-primary text-primary rounded-lg p-2.5 cursor-pointer hover:bg-primary/5 transition has-[:checked]:bg-primary has-[:checked]:text-white">
-                                <input type="radio" name="tipoLancamento" value="parcelado" class="hidden" checked onclick="mostrarCampoParcelas()">
-                                <i class="fa fa-calendar"></i> Parcelado
+                        <div class="grid grid-cols-3 gap-2 mb-2.5">
+                            <label class="flex items-center justify-center gap-1 border border-primary text-primary rounded-lg p-2 cursor-pointer hover:bg-primary/5 transition has-[:checked]:bg-primary has-[:checked]:text-white">
+                                <input type="radio" name="tipoLancamento" value="unico" class="hidden">
+                                <i class="fa fa-file-o"></i> Único
                             </label>
-                            <label class="flex items-center justify-center gap-1.5 border border-primary text-primary rounded-lg p-2.5 cursor-pointer hover:bg-primary/5 transition has-[:checked]:bg-primary has-[:checked]:text-white">
+                            <label class="flex items-center justify-center gap-1 border border-primary text-primary rounded-lg p-2 cursor-pointer hover:bg-primary/5 transition has-[:checked]:bg-primary has-[:checked]:text-white">
+                                <input type="radio" name="tipoLancamento" value="parcelado" class="hidden" onclick="mostrarCampoParcelas()">
+                                <i class="fa fa-calendar"></i> Parc.
+                            </label>
+                            <label class="flex items-center justify-center gap-1 border border-primary text-primary rounded-lg p-2 cursor-pointer hover:bg-primary/5 transition has-[:checked]:bg-primary has-[:checked]:text-white">
                                 <input type="radio" name="tipoLancamento" value="fixo" class="hidden" onclick="mostrarCampoParcelas()">
                                 <i class="fa fa-refresh"></i> Fixo
                             </label>
                         </div>
-                        <div id="campoParcelas" class="mt-2">
+                        <div id="campoParcelas" class="mt-2 hidden">
                             <label class="block text-sm font-medium text-gray-600 mb-1">Quantidade de Parcelas</label>
                             <input type="number" id="qtdParcelas" min="2" max="99" class="w-full border border-gray-200 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-primary/40" placeholder="Ex: 3">
                         </div>
@@ -279,6 +283,7 @@ function mostrarCampoParcelas() {
     const tipo = document.querySelector('input[name="tipoLancamento"]:checked').value;
     const campo = document.getElementById('campoParcelas');
     const input = document.getElementById('qtdParcelas');
+    
     if (tipo === 'parcelado') {
         campo.classList.remove('hidden');
         input.required = true;
@@ -360,12 +365,14 @@ function abrirModal(tipo) {
     categorias[tipo].forEach(c => select.innerHTML += `<option value="${c}">${c}</option>`);
 
     document.querySelector('input[name="statusPagamento"][value="pago"]').checked = true;
-    document.querySelector('input[name="tipoLancamento"][value="parcelado"]').checked = true;
-    mostrarCampoParcelas();
+    // NENHUM TIPO DE LANÇAMENTO VEM SELECIONADO POR PADRÃO
+    document.querySelectorAll('input[name="tipoLancamento"]').forEach(r => r.checked = false);
+    document.getElementById('campoParcelas').classList.add('hidden');
     document.getElementById('modalTransacao').classList.remove('hidden');
     document.body.style.overflow='hidden';
 }
 
+// ✅ FUNÇÃO DE ABRIR EDIÇÃO CORRIGIDA
 function abrirEdicao(id) {
     const t = listaTransacoesGlobal.find(x => x.id === id);
     if (!t) return;
@@ -392,7 +399,10 @@ function abrirEdicao(id) {
     categorias[t.tipo].forEach(c => select.innerHTML += `<option value="${c}" ${c===t.categoria?'selected':''}>${c}</option>`);
 
     document.querySelector(`input[name="statusPagamento"][value="${t.status}"]`).checked = true;
-    document.querySelector(`input[name="tipoLancamento"][value="${t.tipoLancamento}"]`).checked = true;
+    
+    // Marca o tipo que foi salvo
+    const tipoSalvo = t.tipoLancamento || 'unico';
+    document.querySelector(`input[name="tipoLancamento"][value="${tipoSalvo}"]`).checked = true;
     document.getElementById('qtdParcelas').value = t.qtdParcelas || '';
     mostrarCampoParcelas();
 
@@ -401,29 +411,34 @@ function abrirEdicao(id) {
 }
 
 // ==============================================
-// ✅ SALVAR E GERAR PARCELAS AUTOMÁTICAS
+// ✅ SALVAR E GERAR LANÇAMENTOS
 // ==============================================
 async function salvarTransacao(e) {
     e.preventDefault();
+    
+    const tipoLancSelecionado = document.querySelector('input[name="tipoLancamento"]:checked');
+    if (!tipoLancSelecionado) {
+        alert('Selecione o tipo de lançamento!');
+        return;
+    }
+
     const tipo = document.getElementById('tipoTransacao').value;
     const valor = valorParaNumero(document.getElementById('valor').value);
     const descricao = document.getElementById('descricao').value;
     const data = document.getElementById('data').value.split('-').reverse().join('/');
     const categoria = document.getElementById('categoria').value;
     const status = document.querySelector('input[name="statusPagamento"]:checked').value;
-    const tipoLanc = document.querySelector('input[name="tipoLancamento"]:checked').value;
-    const qtd = tipoLanc==='parcelado' ? parseInt(document.getElementById('qtdParcelas').value) : 24;
+    const tipoLanc = tipoLancSelecionado.value;
+    const qtd = tipoLanc==='parcelado' ? parseInt(document.getElementById('qtdParcelas').value) : (tipoLanc==='fixo' ? 24 : 1);
     const idEdicao = document.getElementById('idEdicao').value;
     const grupoId = idEdicao ? document.getElementById('grupoId').value : gerarGrupoId();
 
     if (idEdicao) {
-        // Edição: Atualiza só esta ou todo grupo?
         await db.collection('transacoes').doc(idEdicao).update({
-            tipo, valor, descricao, data, categoria, status, tipoLanc, qtdParcelas: qtd, grupoId,
+            tipo, valor, descricao, data, categoria, status, tipoLancamento: tipoLanc, qtdParcelas: qtd, grupoId,
             updatedAt: firebase.firestore.FieldValue.serverTimestamp()
         });
     } else {
-        // CRIA TODAS AS PARCELAS/MESES AUTOMATICAMENTE
         const lote = db.batch();
         for (let i=0; i<qtd; i++) {
             const dataParcela = somarMes(data, i);
@@ -444,7 +459,7 @@ async function salvarTransacao(e) {
 }
 
 // ==============================================
-// ✅ SISTEMA DE EXCLUSÃO INTELIGENTE
+// ✅ SISTEMA DE EXCLUSÃO
 // ==============================================
 function abrirOpcoesExclusao() {
     fecharModal();
@@ -460,10 +475,11 @@ async function excluirApenasEsta() {
 async function excluirEFuturas() {
     const id = document.getElementById('idEdicao').value;
     const grupo = document.getElementById('grupoId').value;
-    const dataAtualParc = listaTransacoesGlobal.find(t => t.id === id).data;
+    const transacao = listaTransacoesGlobal.find(t => t.id === id);
+    if (!transacao) return;
     
     const excluir = listaTransacoesGlobal.filter(t => 
-        t.grupoId === grupo && t.data >= dataAtualParc
+        t.grupoId === grupo && t.data >= transacao.data
     );
     const lote = db.batch();
     excluir.forEach(t => lote.delete(db.collection('transacoes').doc(t.id)));
@@ -514,9 +530,16 @@ function atualizarLista(lista) {
     lista.forEach(t => {
         const icone = t.tipo==='receita' ? 'fa-arrow-up' : 'fa-arrow-down';
         const cor = t.tipo==='receita' ? 'text-success' : 'text-danger';
-        const tipoInfo = t.tipoLancamento==='fixo' 
-            ? '<span class="text-xs text-primary ml-1"><i class="fa fa-refresh"></i> Fixo</span>'
-            : t.parcelaAtual ? `<span class="text-xs text-primary ml-1">${t.parcelaAtual}</span>` : '';
+        
+        let tipoInfo = '';
+        if (t.tipoLancamento==='fixo') {
+            tipoInfo = '<span class="text-xs text-primary ml-1"><i class="fa fa-refresh"></i> Fixo</span>';
+        } else if (t.parcelaAtual) {
+            tipoInfo = `<span class="text-xs text-primary ml-1">${t.parcelaAtual}</span>`;
+        } else if (t.tipoLancamento==='unico') {
+            tipoInfo = '<span class="text-xs text-gray-400 ml-1">Único</span>';
+        }
+
         const statusTxt = t.tipo==='receita' ? (t.status==='pago'?'Recebida':'A Receber') : (t.status==='pago'?'Pago':'A Pagar');
         const statusCor = t.status==='pago' ? 'text-success' : 'text-warning';
 
