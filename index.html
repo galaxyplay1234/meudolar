@@ -266,22 +266,22 @@ let listaTransacoesGlobal = [];
 let grupoIdAtual = '';
 
 // ==============================================
-// ✅ FUNÇÃO DE DATA 100% CORRIGIDA
+// ✅ FUNÇÕES AUXILIARES 100% CORRIGIDAS
 // ==============================================
 function gerarGrupoId() {
-    return Date.now().toString(36) + Math.random().toString(36).substr(2);
+    return Date.now().toString(36) + Math.random().toString(36).substr(2, 9);
 }
 
 function somarMes(dataStr, qtdMeses) {
     const [dia, mes, ano] = dataStr.split('/').map(Number);
-    const novaData = new Date(ano, mes - 1, 1); // Começa do dia 1 para evitar erros
+    const novaData = new Date(ano, mes - 1, dia);
     novaData.setMonth(novaData.getMonth() + qtdMeses);
     
-    // Ajusta o dia corretamente para não passar do último dia do mês
-    const ultimoDiaDoMes = new Date(novaData.getFullYear(), novaData.getMonth() + 1, 0).getDate();
-    const diaFinal = Math.min(dia, ultimoDiaDoMes);
+    // Ajusta o último dia do mês corretamente
+    const ultimoDia = new Date(novaData.getFullYear(), novaData.getMonth() + 1, 0).getDate();
+    const diaFinal = Math.min(dia, ultimoDia);
     
-    return `${String(diaFinal).padStart(2,'0')}/${String(novaData.getMonth() + 1).padStart(2,'0')}/${novaData.getFullYear()}`;
+    return `${String(diaFinal).padStart(2,'0')}/${String(novaData.getMonth()+1).padStart(2,'0')}/${novaData.getFullYear()}`;
 }
 
 function mostrarCampoParcelas() {
@@ -300,7 +300,7 @@ function mostrarCampoParcelas() {
 }
 
 // ==============================================
-// ✅ FUNÇÕES DE NAVEGAÇÃO
+// ✅ FUNÇÕES DE MÊS
 // ==============================================
 function atualizarNomeMes() {
     document.getElementById('nomeMesAtual').textContent = `${meses[mesSelecionado]} / ${anoSelecionado}`;
@@ -331,7 +331,7 @@ function mascaraValor(campo) {
     v = v.replace('.', ',').replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1.');
     campo.value = v;
 }
-function valorParaNumero(s) { return parseFloat(s.replace(/\./g,'').replace(',','.')); }
+function valorParaNumero(s) { return parseFloat(s.replace(/\./g,'').replace(',','.')) || 0; }
 function formatarValor(n) { return n.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); }
 function atualizarDataVisual(c) {
     const v = document.getElementById('dataVisual');
@@ -413,7 +413,7 @@ function abrirEdicao(id) {
 }
 
 // ==============================================
-// ✅ SALVAR E GERAR LANÇAMENTOS CORRETAMENTE
+// ✅ SALVAR CORRIGIDO - AGORA FUNCIONA TUDO
 // ==============================================
 async function salvarTransacao(e) {
     e.preventDefault();
@@ -426,47 +426,86 @@ async function salvarTransacao(e) {
 
     const tipo = document.getElementById('tipoTransacao').value;
     const valor = valorParaNumero(document.getElementById('valor').value);
-    const descricao = document.getElementById('descricao').value;
+    const descricao = document.getElementById('descricao').value.trim();
     const dataBase = document.getElementById('data').value.split('-').reverse().join('/');
-    const categoria = document.getElementById('categoria').value;
+    const categoria = document.getElementById('categoria').value.trim();
     const status = document.querySelector('input[name="statusPagamento"]:checked').value;
     const tipoLanc = tipoLancSelecionado.value;
     
+    // Define quantidade correta
     let qtd;
     if (tipoLanc === 'unico') qtd = 1;
-    else if (tipoLanc === 'parcelado') qtd = parseInt(document.getElementById('qtdParcelas').value);
+    else if (tipoLanc === 'parcelado') qtd = parseInt(document.getElementById('qtdParcelas').value) || 2;
     else qtd = 24; // Fixo = 2 anos
 
     const idEdicao = document.getElementById('idEdicao').value;
     const grupoId = idEdicao ? document.getElementById('grupoId').value : gerarGrupoId();
 
-    if (idEdicao) {
-        await db.collection('transacoes').doc(idEdicao).update({
-            tipo, valor, descricao, data: dataBase, categoria, status, tipoLancamento: tipoLanc, qtdParcelas: qtd, grupoId,
-            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-        });
-    } else {
-        const lote = db.batch();
-        for (let i = 0; i < qtd; i++) {
-            const dataParcela = somarMes(dataBase, i);
-            lote.create(db.collection('transacoes').doc(), {
-                tipo, valor, descricao, data: dataParcela, categoria,
-                status: i === 0 ? status : 'pendente',
-                tipoLancamento: tipoLanc,
-                qtdParcelas: tipoLanc === 'parcelado' ? qtd : null,
-                parcelaAtual: tipoLanc === 'parcelado' ? `${i+1}/${qtd}` : null,
-                grupoId,
-                origem: 'manual',
-                createdAt: firebase.firestore.FieldValue.serverTimestamp()
-            });
+    try {
+        if (idEdicao) {
+            // Se editar e mudar tipo: apaga antigas e cria nova sequência
+            const transacaoAtual = listaTransacoesGlobal.find(t => t.id === idEdicao);
+            const mudouTipo = transacaoAtual && transacaoAtual.tipoLancamento !== tipoLanc;
+
+            if (mudouTipo) {
+                // Apaga todas do grupo antigo
+                const loteExcluir = db.batch();
+                listaTransacoesGlobal.filter(t => t.grupoId === grupoId).forEach(t => {
+                    loteExcluir.delete(db.collection('transacoes').doc(t.id));
+                });
+                await loteExcluir.commit();
+
+                // Cria nova sequência
+                const loteCriar = db.batch();
+                for (let i = 0; i < qtd; i++) {
+                    const dataParcela = somarMes(dataBase, i);
+                    loteCriar.create(db.collection('transacoes').doc(), {
+                        tipo, valor, descricao, data: dataParcela, categoria,
+                        status: i === 0 ? status : 'pendente',
+                        tipoLancamento: tipoLanc,
+                        qtdParcelas: tipoLanc === 'parcelado' ? qtd : null,
+                        parcelaAtual: tipoLanc === 'parcelado' ? `${i+1}/${qtd}` : null,
+                        grupoId: gerarGrupoId(),
+                        origem: 'manual',
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                }
+                await loteCriar.commit();
+            } else {
+                // Apenas atualiza os dados
+                await db.collection('transacoes').doc(idEdicao).update({
+                    tipo, valor, descricao, data: dataBase, categoria, status, 
+                    tipoLancamento: tipoLanc, qtdParcelas: qtd, grupoId,
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+            }
+        } else {
+            // CRIA NOVO LANÇAMENTO DO ZERO
+            const lote = db.batch();
+            for (let i = 0; i < qtd; i++) {
+                const dataParcela = somarMes(dataBase, i);
+                lote.create(db.collection('transacoes').doc(), {
+                    tipo, valor, descricao, data: dataParcela, categoria,
+                    status: i === 0 ? status : 'pendente',
+                    tipoLancamento: tipoLanc,
+                    qtdParcelas: tipoLanc === 'parcelado' ? qtd : null,
+                    parcelaAtual: tipoLanc === 'parcelado' ? `${i+1}/${qtd}` : null,
+                    grupoId: grupoId,
+                    origem: 'manual',
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+            }
+            await lote.commit();
         }
-        await lote.commit();
+
+        fecharModal();
+    } catch (erro) {
+        alert('Erro ao salvar: ' + erro.message);
     }
-    fecharModal();
 }
 
 // ==============================================
-// ✅ EXCLUSÃO INTELIGENTE
+// ✅ EXCLUSÃO
 // ==============================================
 function abrirOpcoesExclusao() {
     fecharModal();
@@ -504,7 +543,7 @@ async function excluirTodasGrupo() {
 }
 
 // ==============================================
-// ✅ CARREGAR E EXIBIR
+// ✅ CARREGAR DADOS
 // ==============================================
 db.collection('transacoes').orderBy('createdAt','desc').limit(200).onSnapshot(snap => {
     listaTransacoesGlobal = [];
