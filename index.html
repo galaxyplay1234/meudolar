@@ -159,7 +159,7 @@
                         <div class="grid grid-cols-3 gap-2 mb-2.5">
                             <label class="flex items-center justify-center gap-1 border border-primary text-primary rounded-lg p-2 cursor-pointer hover:bg-primary/5 transition has-[:checked]:bg-primary has-[:checked]:text-white">
                                 <input type="radio" name="tipoLancamento" value="unico" class="hidden">
-                                <i class="fa fa-file-o"></i> Único
+                                <i class="fa fa-dot-circle-o"></i> Único
                             </label>
                             <label class="flex items-center justify-center gap-1 border border-primary text-primary rounded-lg p-2 cursor-pointer hover:bg-primary/5 transition has-[:checked]:bg-primary has-[:checked]:text-white">
                                 <input type="radio" name="tipoLancamento" value="parcelado" class="hidden" onclick="mostrarCampoParcelas()">
@@ -206,13 +206,13 @@
                 <h3 class="text-lg font-bold mb-4 text-center">O que deseja excluir?</h3>
                 <div class="space-y-2">
                     <button onclick="excluirApenasEsta()" class="w-full text-left p-3 border border-gray-200 rounded-lg hover:bg-gray-50">
-                        <i class="fa fa-file-text-o mr-2"></i> Apenas esta parcela
+                        <i class="fa fa-file-text-o mr-2"></i> Apenas esta
                     </button>
                     <button onclick="excluirEFuturas()" class="w-full text-left p-3 border border-gray-200 rounded-lg hover:bg-gray-50">
-                        <i class="fa fa-calendar-o mr-2"></i> Esta e todas as futuras
+                        <i class="fa fa-calendar-o mr-2"></i> Esta e futuras
                     </button>
                     <button onclick="excluirTodasGrupo()" class="w-full text-left p-3 border border-danger/30 text-danger rounded-lg hover:bg-danger/5">
-                        <i class="fa fa-trash mr-2"></i> Todas as parcelas
+                        <i class="fa fa-trash mr-2"></i> Todas
                     </button>
                 </div>
                 <button onclick="fecharModalExcluir()" class="w-full mt-4 p-2 text-gray-500 hover:text-gray-700">Cancelar</button>
@@ -266,7 +266,7 @@ let listaTransacoesGlobal = [];
 let grupoIdAtual = '';
 
 // ==============================================
-// ✅ FUNÇÕES AUXILIARES
+// ✅ FUNÇÃO DE DATA 100% CORRIGIDA
 // ==============================================
 function gerarGrupoId() {
     return Date.now().toString(36) + Math.random().toString(36).substr(2);
@@ -274,13 +274,18 @@ function gerarGrupoId() {
 
 function somarMes(dataStr, qtdMeses) {
     const [dia, mes, ano] = dataStr.split('/').map(Number);
-    const novaData = new Date(ano, mes - 1, dia);
+    const novaData = new Date(ano, mes - 1, 1); // Começa do dia 1 para evitar erros
     novaData.setMonth(novaData.getMonth() + qtdMeses);
-    return `${String(novaData.getDate()).padStart(2,'0')}/${String(novaData.getMonth()+1).padStart(2,'0')}/${novaData.getFullYear()}`;
+    
+    // Ajusta o dia corretamente para não passar do último dia do mês
+    const ultimoDiaDoMes = new Date(novaData.getFullYear(), novaData.getMonth() + 1, 0).getDate();
+    const diaFinal = Math.min(dia, ultimoDiaDoMes);
+    
+    return `${String(diaFinal).padStart(2,'0')}/${String(novaData.getMonth() + 1).padStart(2,'0')}/${novaData.getFullYear()}`;
 }
 
 function mostrarCampoParcelas() {
-    const tipo = document.querySelector('input[name="tipoLancamento"]:checked').value;
+    const tipo = document.querySelector('input[name="tipoLancamento"]:checked')?.value;
     const campo = document.getElementById('campoParcelas');
     const input = document.getElementById('qtdParcelas');
     
@@ -295,7 +300,7 @@ function mostrarCampoParcelas() {
 }
 
 // ==============================================
-// ✅ FUNÇÕES DE MÊS
+// ✅ FUNÇÕES DE NAVEGAÇÃO
 // ==============================================
 function atualizarNomeMes() {
     document.getElementById('nomeMesAtual').textContent = `${meses[mesSelecionado]} / ${anoSelecionado}`;
@@ -312,7 +317,7 @@ function proximoMes() {
 function filtrarTransacoesPorMes() {
     const filtradas = listaTransacoesGlobal.filter(t => {
         const [d, m, a] = t.data.split('/').map(Number);
-        return m === mesSelecionado+1 && a === anoSelecionado;
+        return m === mesSelecionado + 1 && a === anoSelecionado;
     });
     atualizarDados(filtradas);
 }
@@ -365,14 +370,12 @@ function abrirModal(tipo) {
     categorias[tipo].forEach(c => select.innerHTML += `<option value="${c}">${c}</option>`);
 
     document.querySelector('input[name="statusPagamento"][value="pago"]').checked = true;
-    // NENHUM TIPO DE LANÇAMENTO VEM SELECIONADO POR PADRÃO
     document.querySelectorAll('input[name="tipoLancamento"]').forEach(r => r.checked = false);
     document.getElementById('campoParcelas').classList.add('hidden');
     document.getElementById('modalTransacao').classList.remove('hidden');
     document.body.style.overflow='hidden';
 }
 
-// ✅ FUNÇÃO DE ABRIR EDIÇÃO CORRIGIDA
 function abrirEdicao(id) {
     const t = listaTransacoesGlobal.find(x => x.id === id);
     if (!t) return;
@@ -400,7 +403,6 @@ function abrirEdicao(id) {
 
     document.querySelector(`input[name="statusPagamento"][value="${t.status}"]`).checked = true;
     
-    // Marca o tipo que foi salvo
     const tipoSalvo = t.tipoLancamento || 'unico';
     document.querySelector(`input[name="tipoLancamento"][value="${tipoSalvo}"]`).checked = true;
     document.getElementById('qtdParcelas').value = t.qtdParcelas || '';
@@ -411,7 +413,7 @@ function abrirEdicao(id) {
 }
 
 // ==============================================
-// ✅ SALVAR E GERAR LANÇAMENTOS
+// ✅ SALVAR E GERAR LANÇAMENTOS CORRETAMENTE
 // ==============================================
 async function salvarTransacao(e) {
     e.preventDefault();
@@ -425,29 +427,34 @@ async function salvarTransacao(e) {
     const tipo = document.getElementById('tipoTransacao').value;
     const valor = valorParaNumero(document.getElementById('valor').value);
     const descricao = document.getElementById('descricao').value;
-    const data = document.getElementById('data').value.split('-').reverse().join('/');
+    const dataBase = document.getElementById('data').value.split('-').reverse().join('/');
     const categoria = document.getElementById('categoria').value;
     const status = document.querySelector('input[name="statusPagamento"]:checked').value;
     const tipoLanc = tipoLancSelecionado.value;
-    const qtd = tipoLanc==='parcelado' ? parseInt(document.getElementById('qtdParcelas').value) : (tipoLanc==='fixo' ? 24 : 1);
+    
+    let qtd;
+    if (tipoLanc === 'unico') qtd = 1;
+    else if (tipoLanc === 'parcelado') qtd = parseInt(document.getElementById('qtdParcelas').value);
+    else qtd = 24; // Fixo = 2 anos
+
     const idEdicao = document.getElementById('idEdicao').value;
     const grupoId = idEdicao ? document.getElementById('grupoId').value : gerarGrupoId();
 
     if (idEdicao) {
         await db.collection('transacoes').doc(idEdicao).update({
-            tipo, valor, descricao, data, categoria, status, tipoLancamento: tipoLanc, qtdParcelas: qtd, grupoId,
+            tipo, valor, descricao, data: dataBase, categoria, status, tipoLancamento: tipoLanc, qtdParcelas: qtd, grupoId,
             updatedAt: firebase.firestore.FieldValue.serverTimestamp()
         });
     } else {
         const lote = db.batch();
-        for (let i=0; i<qtd; i++) {
-            const dataParcela = somarMes(data, i);
+        for (let i = 0; i < qtd; i++) {
+            const dataParcela = somarMes(dataBase, i);
             lote.create(db.collection('transacoes').doc(), {
                 tipo, valor, descricao, data: dataParcela, categoria,
-                status: i===0 ? status : 'pendente',
+                status: i === 0 ? status : 'pendente',
                 tipoLancamento: tipoLanc,
-                qtdParcelas: tipoLanc==='parcelado' ? qtd : null,
-                parcelaAtual: tipoLanc==='parcelado' ? `${i+1}/${qtd}` : null,
+                qtdParcelas: tipoLanc === 'parcelado' ? qtd : null,
+                parcelaAtual: tipoLanc === 'parcelado' ? `${i+1}/${qtd}` : null,
                 grupoId,
                 origem: 'manual',
                 createdAt: firebase.firestore.FieldValue.serverTimestamp()
@@ -459,7 +466,7 @@ async function salvarTransacao(e) {
 }
 
 // ==============================================
-// ✅ SISTEMA DE EXCLUSÃO
+// ✅ EXCLUSÃO INTELIGENTE
 // ==============================================
 function abrirOpcoesExclusao() {
     fecharModal();
@@ -497,7 +504,7 @@ async function excluirTodasGrupo() {
 }
 
 // ==============================================
-// ✅ CARREGAR E EXIBIR DADOS
+// ✅ CARREGAR E EXIBIR
 // ==============================================
 db.collection('transacoes').orderBy('createdAt','desc').limit(200).onSnapshot(snap => {
     listaTransacoesGlobal = [];
@@ -537,7 +544,7 @@ function atualizarLista(lista) {
         } else if (t.parcelaAtual) {
             tipoInfo = `<span class="text-xs text-primary ml-1">${t.parcelaAtual}</span>`;
         } else if (t.tipoLancamento==='unico') {
-            tipoInfo = '<span class="text-xs text-gray-400 ml-1">Único</span>';
+            tipoInfo = '<span class="text-xs text-gray-400 ml-1"><i class="fa fa-dot-circle-o"></i> Único</span>';
         }
 
         const statusTxt = t.tipo==='receita' ? (t.status==='pago'?'Recebida':'A Receber') : (t.status==='pago'?'Pago':'A Pagar');
