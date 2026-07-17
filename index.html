@@ -53,7 +53,7 @@
     </style>
 </head>
 <body class="bg-gray-50 font-inter text-gray-800 no-select">
-    <div class="max-w-md mx-auto bg-white min-h-screen shadow-lg">
+    <div class="max-w-md mx-auto bg-white min-h-screen shadow-lg pb-8"> <!-- ✅ Espaço extra no final -->
         <!-- CABEÇALHO -->
         <header class="bg-primary text-white px-5 pt-6 pb-6 rounded-b-3xl">
             <div class="flex justify-between items-center mb-4">
@@ -176,11 +176,8 @@
 
                     <div class="mb-3">
                         <label class="block text-sm font-medium text-gray-600 mb-1.5">Tipo de Lançamento</label>
-                        <div class="grid grid-cols-3 gap-2 mb-2.5">
-                            <label class="flex items-center justify-center gap-1 border border-primary text-primary rounded-lg p-2 cursor-pointer hover:bg-primary/5 transition has-[:checked]:bg-primary has-[:checked]:text-white">
-                                <input type="radio" name="tipoLancamento" value="unico" class="hidden" checked>
-                                <i class="fa fa-dot-circle-o"></i> Único
-                            </label>
+                        <!-- ✅ Removido o botão ÚNICO, só aparece Parcelado e Fixo -->
+                        <div class="grid grid-cols-2 gap-2 mb-2.5">
                             <label class="flex items-center justify-center gap-1 border border-primary text-primary rounded-lg p-2 cursor-pointer hover:bg-primary/5 transition has-[:checked]:bg-primary has-[:checked]:text-white">
                                 <input type="radio" name="tipoLancamento" value="parcelado" class="hidden" onclick="mostrarCampoParcelas()">
                                 <i class="fa fa-calendar"></i> Parc.
@@ -283,7 +280,7 @@ const meses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julh
 let mesSelecionado = new Date().getMonth();
 let anoSelecionado = new Date().getFullYear();
 let listaTransacoesGlobal = [];
-let dadosTemp = {}; // Inicializa como objeto vazio para não dar erro
+let dadosTemp = {};
 
 // ==============================================
 // ✅ FUNÇÕES AUXILIARES
@@ -387,7 +384,8 @@ function abrirModal(tipo) {
     categorias[tipo].forEach(c => select.innerHTML += `<option value="${c}">${c}</option>`);
 
     document.querySelector('input[name="statusPagamento"][value="pago"]').checked = true;
-    document.querySelector('input[name="tipoLancamento"][value="unico"]').checked = true;
+    // ✅ Nenhum tipo pré-selecionado — se não escolher, fica como ÚNICO automaticamente
+    document.querySelectorAll('input[name="tipoLancamento"]').forEach(r => r.checked = false);
     document.getElementById('campoParcelas').classList.add('hidden');
     document.getElementById('modalTransacao').classList.remove('hidden');
     document.body.style.overflow='hidden';
@@ -420,7 +418,11 @@ function abrirEdicao(id) {
     document.querySelector(`input[name="statusPagamento"][value="${t.status}"]`).checked = true;
     
     const tipoSalvo = t.tipoLancamento || 'unico';
-    document.querySelector(`input[name="tipoLancamento"][value="${tipoSalvo}"]`).checked = true;
+    if (tipoSalvo !== 'unico') {
+        document.querySelector(`input[name="tipoLancamento"][value="${tipoSalvo}"]`).checked = true;
+    } else {
+        document.querySelectorAll('input[name="tipoLancamento"]').forEach(r => r.checked = false);
+    }
     document.getElementById('qtdParcelas').value = t.qtdParcelas || '';
     mostrarCampoParcelas();
 
@@ -429,12 +431,15 @@ function abrirEdicao(id) {
 }
 
 // ==============================================
-// ✅ SALVAR - CORRIGIDO O ERRO DE dadosTemp
+// ✅ SALVAR - AJUSTADO CONFORME PEDIDO
 // ==============================================
 async function salvarTransacao(e) {
     e.preventDefault();
     
-    const tipoLanc = document.querySelector('input[name="tipoLancamento"]:checked').value;
+    // ✅ Se não selecionar nada, assume ÚNICO automaticamente
+    const tipoLancSelecionado = document.querySelector('input[name="tipoLancamento"]:checked');
+    const tipoLanc = tipoLancSelecionado ? tipoLancSelecionado.value : 'unico';
+
     const tipo = document.getElementById('tipoTransacao').value;
     const valor = valorParaNumero(document.getElementById('valor').value);
     const descricao = document.getElementById('descricao').value.trim();
@@ -491,7 +496,6 @@ async function salvarTransacao(e) {
             // Se já era FIXA/PARCELADA
             if (tipoOriginal !== 'unico') {
                 if (!modo) {
-                    // GUARDA OS DADOS CERTINHO ANTES DE ABRIR O POPUP
                     dadosTemp = { 
                         tipoLanc, tipo, valor, descricao, dataBase, 
                         categoria, status, qtd, grupoId, idEdicao 
@@ -534,10 +538,9 @@ async function salvarTransacao(e) {
 }
 
 // ==============================================
-// ✅ EXECUTA ATUALIZAÇÃO - COM VERIFICAÇÃO DE SEGURANÇA
+// ✅ EXECUTA ATUALIZAÇÃO
 // ==============================================
 async function executarAtualizacao(modo) {
-    // SE NÃO TIVER DADOS, NÃO FAZ NADA (EVITA O ERRO)
     if (!dadosTemp || Object.keys(dadosTemp).length === 0) return;
 
     const { tipo, valor, descricao, dataBase, categoria, status, grupoId, idEdicao } = dadosTemp;
@@ -620,7 +623,7 @@ db.collection('transacoes')
     });
 
 // ==============================================
-// ✅ ATUALIZAR TELA
+// ✅ ATUALIZAR TELA - REMOVIDO O ÍCONE "ÚNICO" DA LISTA
 // ==============================================
 function atualizarDados(lista) {
     let recTotal=0, recPago=0, desTotal=0, desPago=0;
@@ -651,7 +654,7 @@ function atualizarLista(lista) {
         let tipoInfo = '';
         if (t.tipoLancamento==='fixo') tipoInfo = '<span class="text-xs text-primary ml-1"><i class="fa fa-refresh"></i> Fixo</span>';
         else if (t.parcelaAtual) tipoInfo = `<span class="text-xs text-primary ml-1">${t.parcelaAtual}</span>`;
-        else if (t.tipoLancamento==='unico') tipoInfo = '<span class="text-xs text-gray-400 ml-1"><i class="fa fa-dot-circle-o"></i> Único</span>';
+        // ✅ REMOVIDO: linha que mostrava "Único" na lista
 
         const statusTxt = t.tipo==='receita' ? (t.status==='pago'?'Recebida':'A Receber') : (t.status==='pago'?'Pago':'A Pagar');
         const statusCor = t.status==='pago' ? 'text-success' : 'text-warning';
