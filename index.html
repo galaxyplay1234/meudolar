@@ -3,6 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    
+    <!-- ✅ BARRA DE STATUS AZUL -->
+    <meta name="theme-color" content="#2563EB">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Minhas Finanças">
+    
     <title>Controle Financeiro</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
@@ -39,7 +46,7 @@
             .no-select { -webkit-user-select: none; user-select: none; }
             .scrollbar-hide::-webkit-scrollbar { display: none; }
         }
-        html, body { overscroll-behavior: none; touch-action: pan-x pan-y; height: 100%; }
+        html, body { overscroll-behavior: none; touch-action: pan-x pan-y; height: 100%; padding-top: env(safe-area-inset-top); }
 
         .campo-data-wrapper { position: relative; }
         .campo-data-wrapper input[type="date"] {
@@ -108,21 +115,19 @@
             </div>
         </div>
 
-        <!-- ✅ ÁREA DE TRANSAÇÕES: TÍTULO FIXO + LISTA ROLÁVEL + ESPAÇO FINAL -->
+        <!-- ÁREA DE TRANSAÇÕES: TÍTULO FIXO + LISTA ROLÁVEL -->
         <div class="px-5 mt-6 flex flex-col flex-grow overflow-hidden">
-            <!-- TÍTULO FIXO - NÃO ROLA -->
             <div class="flex justify-between items-center mb-3 flex-shrink-0 bg-white pt-1">
                 <h3 class="text-base font-semibold">Transações Recentes</h3>
                 <a href="#" class="text-primary text-xs font-medium">Ver Todas</a>
             </div>
 
-            <!-- LISTA QUE ROLA POR BAIXO + ESPAÇO NO FINAL -->
             <div id="listaTransacoes" class="space-y-2 overflow-y-auto scrollbar-hide pb-10">
                 <div class="text-center text-gray-400 py-6"><i class="fa fa-list-alt text-2xl mb-1"></i><p class="text-sm">Nenhuma transação cadastrada</p></div>
             </div>
         </div>
 
-        <!-- MODAL ATUALIZAR OPÇÕES -->
+        <!-- MODAIS -->
         <div id="modalOpcoesAtualizar" class="fixed inset-0 bg-black/60 flex items-center justify-center z-50 hidden">
             <div class="bg-white rounded-2xl w-full max-w-sm p-5 mx-4">
                 <h3 class="text-lg font-bold mb-4 text-center">O que deseja atualizar?</h3>
@@ -141,7 +146,6 @@
             </div>
         </div>
 
-        <!-- MODAL CADASTRO -->
         <div id="modalTransacao" class="fixed inset-0 bg-black/60 flex items-end justify-center z-50 hidden">
             <div class="bg-white rounded-t-3xl w-full max-w-md p-5">
                 <div class="flex justify-between items-center mb-4">
@@ -219,7 +223,6 @@
             </div>
         </div>
 
-        <!-- MODAL OPÇÕES EXCLUSÃO -->
         <div id="modalExcluir" class="fixed inset-0 bg-black/60 flex items-center justify-center z-50 hidden">
             <div class="bg-white rounded-2xl w-full max-w-sm p-5 mx-4">
                 <h3 class="text-lg font-bold mb-4 text-center">O que deseja excluir?</h3>
@@ -238,7 +241,6 @@
             </div>
         </div>
 
-        <!-- MODAL WHATSAPP -->
         <div id="modalWhatsapp" class="fixed inset-0 bg-black/60 flex items-end justify-center z-50 hidden">
             <div class="bg-white rounded-t-3xl w-full max-w-md p-5">
                 <div class="flex justify-between items-center mb-4">
