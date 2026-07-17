@@ -53,7 +53,8 @@
     </style>
 </head>
 <body class="bg-gray-50 font-inter text-gray-800 no-select">
-    <div class="max-w-md mx-auto bg-white min-h-screen shadow-lg pb-8"> <!-- ✅ Espaço extra no final -->
+    <!-- ✅ Espaço final ajustado sem criar faixa branca -->
+    <div class="max-w-md mx-auto bg-white min-h-screen shadow-lg">
         <!-- CABEÇALHO -->
         <header class="bg-primary text-white px-5 pt-6 pb-6 rounded-b-3xl">
             <div class="flex justify-between items-center mb-4">
@@ -108,13 +109,13 @@
             </div>
         </div>
 
-        <!-- LISTA -->
-        <div class="px-5 mt-6">
+        <!-- ✅ LISTA - ARRUMADA A FAIXA BRANCA: removi altura fixa e adicionei padding interno -->
+        <div class="px-5 mt-6 pb-8"> <!-- pb-8 = espaço natural no final -->
             <div class="flex justify-between items-center mb-3">
                 <h3 class="text-base font-semibold">Transações Recentes</h3>
                 <a href="#" class="text-primary text-xs font-medium">Ver Todas</a>
             </div>
-            <div id="listaTransacoes" class="space-y-2 max-h-[400px] overflow-y-auto scrollbar-hide">
+            <div id="listaTransacoes" class="space-y-2 pb-2"> <!-- Sem altura fixa quebrada -->
                 <div class="text-center text-gray-400 py-6"><i class="fa fa-list-alt text-2xl mb-1"></i><p class="text-sm">Nenhuma transação cadastrada</p></div>
             </div>
         </div>
@@ -176,7 +177,6 @@
 
                     <div class="mb-3">
                         <label class="block text-sm font-medium text-gray-600 mb-1.5">Tipo de Lançamento</label>
-                        <!-- ✅ Removido o botão ÚNICO, só aparece Parcelado e Fixo -->
                         <div class="grid grid-cols-2 gap-2 mb-2.5">
                             <label class="flex items-center justify-center gap-1 border border-primary text-primary rounded-lg p-2 cursor-pointer hover:bg-primary/5 transition has-[:checked]:bg-primary has-[:checked]:text-white">
                                 <input type="radio" name="tipoLancamento" value="parcelado" class="hidden" onclick="mostrarCampoParcelas()">
@@ -282,9 +282,6 @@ let anoSelecionado = new Date().getFullYear();
 let listaTransacoesGlobal = [];
 let dadosTemp = {};
 
-// ==============================================
-// ✅ FUNÇÕES AUXILIARES
-// ==============================================
 function gerarGrupoId() {
     return Date.now().toString(36) + Math.random().toString(36).substring(2, 8);
 }
@@ -312,9 +309,6 @@ function mostrarCampoParcelas() {
     }
 }
 
-// ==============================================
-// ✅ NAVEGAÇÃO DE MÊS
-// ==============================================
 function atualizarNomeMes() {
     document.getElementById('nomeMesAtual').textContent = `${meses[mesSelecionado]} / ${anoSelecionado}`;
     filtrarTransacoesPorMes();
@@ -335,9 +329,6 @@ function filtrarTransacoesPorMes() {
     atualizarDados(filtradas);
 }
 
-// ==============================================
-// ✅ FORMATAÇÃO
-// ==============================================
 function mascaraValor(campo) {
     let v = campo.value.replace(/\D/g,'');
     v = (v/100).toFixed(2) + '';
@@ -354,9 +345,6 @@ function atualizarDataVisual(c) {
     } else { v.textContent='Selecione uma data'; v.classList.add('text-gray-400'); }
 }
 
-// ==============================================
-// ✅ MODAIS
-// ==============================================
 function abrirModalWhatsapp() { document.getElementById('modalWhatsapp').classList.remove('hidden'); document.body.style.overflow='hidden'; }
 function fecharModalWhatsapp() { document.getElementById('modalWhatsapp').classList.add('hidden'); document.body.style.overflow='auto'; }
 function fecharModal() { document.getElementById('modalTransacao').classList.add('hidden'); document.body.style.overflow='auto'; document.getElementById('formTransacao').reset(); atualizarDataVisual({value:''}); dadosTemp = {}; }
@@ -384,7 +372,6 @@ function abrirModal(tipo) {
     categorias[tipo].forEach(c => select.innerHTML += `<option value="${c}">${c}</option>`);
 
     document.querySelector('input[name="statusPagamento"][value="pago"]').checked = true;
-    // ✅ Nenhum tipo pré-selecionado — se não escolher, fica como ÚNICO automaticamente
     document.querySelectorAll('input[name="tipoLancamento"]').forEach(r => r.checked = false);
     document.getElementById('campoParcelas').classList.add('hidden');
     document.getElementById('modalTransacao').classList.remove('hidden');
@@ -430,13 +417,9 @@ function abrirEdicao(id) {
     document.body.style.overflow='hidden';
 }
 
-// ==============================================
-// ✅ SALVAR - AJUSTADO CONFORME PEDIDO
-// ==============================================
 async function salvarTransacao(e) {
     e.preventDefault();
     
-    // ✅ Se não selecionar nada, assume ÚNICO automaticamente
     const tipoLancSelecionado = document.querySelector('input[name="tipoLancamento"]:checked');
     const tipoLanc = tipoLancSelecionado ? tipoLancSelecionado.value : 'unico';
 
@@ -461,7 +444,6 @@ async function salvarTransacao(e) {
             const transOriginal = listaTransacoesGlobal.find(t => t.id === idEdicao);
             const tipoOriginal = transOriginal?.tipoLancamento || 'unico';
 
-            // Se era ÚNICA e continua ÚNICA: atualiza direto
             if (tipoOriginal === 'unico' && tipoLanc === 'unico') {
                 await db.collection('transacoes').doc(idEdicao).update({
                     tipo, valor, descricao, data: dataBase, categoria, status,
@@ -471,7 +453,6 @@ async function salvarTransacao(e) {
                 return;
             }
 
-            // Se mudou de ÚNICA para FIXA/PARCELADA: cria grupo novo
             if (tipoOriginal === 'unico' && tipoLanc !== 'unico') {
                 await db.collection('transacoes').doc(idEdicao).delete();
                 const novoGrupo = gerarGrupoId();
@@ -493,7 +474,6 @@ async function salvarTransacao(e) {
                 return;
             }
 
-            // Se já era FIXA/PARCELADA
             if (tipoOriginal !== 'unico') {
                 if (!modo) {
                     dadosTemp = { 
@@ -513,7 +493,6 @@ async function salvarTransacao(e) {
             }
         }
 
-        // NOVO cadastro
         const lote = db.batch();
         const novoGrupo = gerarGrupoId();
         for (let i = 0; i < qtd; i++) {
@@ -537,9 +516,6 @@ async function salvarTransacao(e) {
     }
 }
 
-// ==============================================
-// ✅ EXECUTA ATUALIZAÇÃO
-// ==============================================
 async function executarAtualizacao(modo) {
     if (!dadosTemp || Object.keys(dadosTemp).length === 0) return;
 
@@ -567,9 +543,6 @@ function atualizarApenasEsta() { document.getElementById('modoAtualizacao').valu
 function atualizarEFuturas() { document.getElementById('modoAtualizacao').value = 'estaEFuturas'; salvarTransacao(new Event('submit')); }
 function atualizarTodasGrupo() { document.getElementById('modoAtualizacao').value = 'todas'; salvarTransacao(new Event('submit')); }
 
-// ==============================================
-// ✅ EXCLUSÃO
-// ==============================================
 function abrirOpcoesExclusao() { fecharModal(); document.getElementById('modalExcluir').classList.remove('hidden'); }
 
 async function excluirApenasEsta() {
@@ -603,9 +576,6 @@ async function excluirTodasGrupo() {
     fecharModalExcluir();
 }
 
-// ==============================================
-// ✅ CARREGAR DADOS E ORDENAR POR DATA
-// ==============================================
 db.collection('transacoes')
     .orderBy('createdAt', 'desc')
     .limit(500)
@@ -622,9 +592,6 @@ db.collection('transacoes')
         filtrarTransacoesPorMes();
     });
 
-// ==============================================
-// ✅ ATUALIZAR TELA - REMOVIDO O ÍCONE "ÚNICO" DA LISTA
-// ==============================================
 function atualizarDados(lista) {
     let recTotal=0, recPago=0, desTotal=0, desPago=0;
     lista.forEach(t => {
@@ -654,7 +621,6 @@ function atualizarLista(lista) {
         let tipoInfo = '';
         if (t.tipoLancamento==='fixo') tipoInfo = '<span class="text-xs text-primary ml-1"><i class="fa fa-refresh"></i> Fixo</span>';
         else if (t.parcelaAtual) tipoInfo = `<span class="text-xs text-primary ml-1">${t.parcelaAtual}</span>`;
-        // ✅ REMOVIDO: linha que mostrava "Único" na lista
 
         const statusTxt = t.tipo==='receita' ? (t.status==='pago'?'Recebida':'A Receber') : (t.status==='pago'?'Pago':'A Pagar');
         const statusCor = t.status==='pago' ? 'text-success' : 'text-warning';
