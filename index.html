@@ -39,7 +39,7 @@
             .no-select { -webkit-user-select: none; user-select: none; }
             .scrollbar-hide::-webkit-scrollbar { display: none; }
         }
-        html, body { overscroll-behavior: none; touch-action: pan-x pan-y; }
+        html, body { overscroll-behavior: none; touch-action: pan-x pan-y; height: 100%; }
 
         .campo-data-wrapper { position: relative; }
         .campo-data-wrapper input[type="date"] {
@@ -52,11 +52,10 @@
         }
     </style>
 </head>
-<body class="bg-gray-50 font-inter text-gray-800 no-select">
-    <!-- ✅ Espaço final ajustado sem criar faixa branca -->
-    <div class="max-w-md mx-auto bg-white min-h-screen shadow-lg">
+<body class="bg-gray-50 font-inter text-gray-800 no-select h-full">
+    <div class="max-w-md mx-auto bg-white h-full shadow-lg flex flex-col">
         <!-- CABEÇALHO -->
-        <header class="bg-primary text-white px-5 pt-6 pb-6 rounded-b-3xl">
+        <header class="bg-primary text-white px-5 pt-6 pb-6 rounded-b-3xl flex-shrink-0">
             <div class="flex justify-between items-center mb-4">
                 <h1 class="text-lg font-bold">Minhas Finanças</h1>
                 <button onclick="abrirModalWhatsapp()" class="text-base bg-white/20 p-1.5 rounded-full">
@@ -98,7 +97,7 @@
         </header>
 
         <!-- BOTÕES -->
-        <div class="px-5 mt-5">
+        <div class="px-5 mt-5 flex-shrink-0">
             <div class="grid grid-cols-2 gap-3">
                 <button onclick="abrirModal('receita')" class="bg-success text-white rounded-lg p-3 shadow-sm flex items-center justify-center gap-1.5 text-sm font-medium">
                     <i class="fa fa-plus-circle"></i> Nova Receita
@@ -109,13 +108,16 @@
             </div>
         </div>
 
-        <!-- ✅ LISTA - ARRUMADA A FAIXA BRANCA: removi altura fixa e adicionei padding interno -->
-        <div class="px-5 mt-6 pb-8"> <!-- pb-8 = espaço natural no final -->
-            <div class="flex justify-between items-center mb-3">
+        <!-- ✅ ÁREA DE TRANSAÇÕES: TÍTULO FIXO + LISTA ROLÁVEL + ESPAÇO FINAL -->
+        <div class="px-5 mt-6 flex flex-col flex-grow overflow-hidden">
+            <!-- TÍTULO FIXO - NÃO ROLA -->
+            <div class="flex justify-between items-center mb-3 flex-shrink-0 bg-white pt-1">
                 <h3 class="text-base font-semibold">Transações Recentes</h3>
                 <a href="#" class="text-primary text-xs font-medium">Ver Todas</a>
             </div>
-            <div id="listaTransacoes" class="space-y-2 pb-2"> <!-- Sem altura fixa quebrada -->
+
+            <!-- LISTA QUE ROLA POR BAIXO + ESPAÇO NO FINAL -->
+            <div id="listaTransacoes" class="space-y-2 overflow-y-auto scrollbar-hide pb-10">
                 <div class="text-center text-gray-400 py-6"><i class="fa fa-list-alt text-2xl mb-1"></i><p class="text-sm">Nenhuma transação cadastrada</p></div>
             </div>
         </div>
