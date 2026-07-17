@@ -119,6 +119,25 @@
             </div>
         </div>
 
+        <!-- MODAL ATUALIZAR OPÇÕES -->
+        <div id="modalOpcoesAtualizar" class="fixed inset-0 bg-black/60 flex items-center justify-center z-50 hidden">
+            <div class="bg-white rounded-2xl w-full max-w-sm p-5 mx-4">
+                <h3 class="text-lg font-bold mb-4 text-center">O que deseja atualizar?</h3>
+                <div class="space-y-2">
+                    <button onclick="atualizarApenasEsta()" class="w-full text-left p-3 border border-gray-200 rounded-lg hover:bg-gray-50">
+                        <i class="fa fa-file-text-o mr-2"></i> Apenas esta transação
+                    </button>
+                    <button onclick="atualizarEFuturas()" class="w-full text-left p-3 border border-gray-200 rounded-lg hover:bg-gray-50">
+                        <i class="fa fa-calendar-o mr-2"></i> Esta e as futuras
+                    </button>
+                    <button onclick="atualizarTodasGrupo()" class="w-full text-left p-3 border border-primary/30 text-primary rounded-lg hover:bg-primary/5">
+                        <i class="fa fa-refresh mr-2"></i> Todas do grupo
+                    </button>
+                </div>
+                <button onclick="fecharModalOpcoesAtualizar()" class="w-full mt-4 p-2 text-gray-500 hover:text-gray-700">Cancelar</button>
+            </div>
+        </div>
+
         <!-- MODAL CADASTRO -->
         <div id="modalTransacao" class="fixed inset-0 bg-black/60 flex items-end justify-center z-50 hidden">
             <div class="bg-white rounded-t-3xl w-full max-w-md p-5">
@@ -130,6 +149,7 @@
                     <input type="hidden" id="tipoTransacao" value="">
                     <input type="hidden" id="idEdicao" value="">
                     <input type="hidden" id="grupoId" value="">
+                    <input type="hidden" id="modoAtualizacao" value="">
 
                     <div class="mb-3">
                         <label class="block text-sm font-medium text-gray-600 mb-1">Valor (R$)</label>
@@ -251,7 +271,6 @@ const firebaseConfig = {
     appId: "1:306212390482:web:5e6cfe205e374672dc418b"
 };
 
-// ✅ INICIALIZA FIREBASE CORRETAMENTE
 const app = firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
@@ -264,6 +283,7 @@ const meses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julh
 let mesSelecionado = new Date().getMonth();
 let anoSelecionado = new Date().getFullYear();
 let listaTransacoesGlobal = [];
+let dadosTemp = {}; // Inicializa como objeto vazio para não dar erro
 
 // ==============================================
 // ✅ FUNÇÕES AUXILIARES
@@ -342,8 +362,9 @@ function atualizarDataVisual(c) {
 // ==============================================
 function abrirModalWhatsapp() { document.getElementById('modalWhatsapp').classList.remove('hidden'); document.body.style.overflow='hidden'; }
 function fecharModalWhatsapp() { document.getElementById('modalWhatsapp').classList.add('hidden'); document.body.style.overflow='auto'; }
-function fecharModal() { document.getElementById('modalTransacao').classList.add('hidden'); document.body.style.overflow='auto'; document.getElementById('formTransacao').reset(); atualizarDataVisual({value:''}); }
+function fecharModal() { document.getElementById('modalTransacao').classList.add('hidden'); document.body.style.overflow='auto'; document.getElementById('formTransacao').reset(); atualizarDataVisual({value:''}); dadosTemp = {}; }
 function fecharModalExcluir() { document.getElementById('modalExcluir').classList.add('hidden'); }
+function fecharModalOpcoesAtualizar() { document.getElementById('modalOpcoesAtualizar').classList.add('hidden'); dadosTemp = {}; }
 
 function abrirModal(tipo) {
     fecharModal();
@@ -408,7 +429,7 @@ function abrirEdicao(id) {
 }
 
 // ==============================================
-// ✅ SALVAR NO FIREBASE - DA FORMA CERTA!
+// ✅ SALVAR - CORRIGIDO O ERRO DE dadosTemp
 // ==============================================
 async function salvarTransacao(e) {
     e.preventDefault();
@@ -421,33 +442,38 @@ async function salvarTransacao(e) {
     const categoria = document.getElementById('categoria').value.trim();
     const status = document.querySelector('input[name="statusPagamento"]:checked').value;
     
-    // Define quantidade de parcelas
     let qtd;
     if (tipoLanc === 'unico') qtd = 1;
     else if (tipoLanc === 'parcelado') qtd = parseInt(document.getElementById('qtdParcelas').value) || 2;
-    else qtd = 24; // Fixo = 2 anos
+    else qtd = 24;
 
     const idEdicao = document.getElementById('idEdicao').value;
-    const grupoId = idEdicao ? document.getElementById('grupoId').value : gerarGrupoId();
+    const grupoId = document.getElementById('grupoId').value;
+    const modo = document.getElementById('modoAtualizacao').value;
 
     try {
         if (idEdicao) {
-            // Se mudou tipo: apaga grupo antigo e cria novo
             const transOriginal = listaTransacoesGlobal.find(t => t.id === idEdicao);
-            if (transOriginal && transOriginal.tipoLancamento !== tipoLanc) {
-                // Apaga todas do grupo antigo
-                const loteDel = db.batch();
-                listaTransacoesGlobal.filter(t => t.grupoId === grupoId).forEach(t => {
-                    loteDel.delete(db.collection('transacoes').doc(t.id));
-                });
-                await loteDel.commit();
+            const tipoOriginal = transOriginal?.tipoLancamento || 'unico';
 
-                // Cria NOVO grupo
+            // Se era ÚNICA e continua ÚNICA: atualiza direto
+            if (tipoOriginal === 'unico' && tipoLanc === 'unico') {
+                await db.collection('transacoes').doc(idEdicao).update({
+                    tipo, valor, descricao, data: dataBase, categoria, status,
+                    tipoLancamento: 'unico', qtdParcelas: null, parcelaAtual: null
+                });
+                fecharModal();
+                return;
+            }
+
+            // Se mudou de ÚNICA para FIXA/PARCELADA: cria grupo novo
+            if (tipoOriginal === 'unico' && tipoLanc !== 'unico') {
+                await db.collection('transacoes').doc(idEdicao).delete();
                 const novoGrupo = gerarGrupoId();
-                const loteNew = db.batch();
+                const lote = db.batch();
                 for (let i = 0; i < qtd; i++) {
                     const dt = somarMes(dataBase, i);
-                    loteNew.set(db.collection('transacoes').doc(), {
+                    lote.set(db.collection('transacoes').doc(), {
                         tipo, valor, descricao, data: dt, categoria,
                         status: i === 0 ? status : 'pendente',
                         tipoLancamento: tipoLanc,
@@ -457,48 +483,95 @@ async function salvarTransacao(e) {
                         createdAt: firebase.firestore.FieldValue.serverTimestamp()
                     });
                 }
-                await loteNew.commit();
-            } else {
-                // Mesmo tipo: só atualiza este documento
-                await db.collection('transacoes').doc(idEdicao).update({
-                    tipo, valor, descricao, data: dataBase, categoria, status,
-                    tipoLancamento: tipoLanc, qtdParcelas: qtd
-                });
+                await lote.commit();
+                fecharModal();
+                return;
             }
-        } else {
-            // NOVO cadastro: cria todas as parcelas
-            const lote = db.batch();
-            const novoGrupo = gerarGrupoId();
-            for (let i = 0; i < qtd; i++) {
-                const dt = somarMes(dataBase, i);
-                lote.set(db.collection('transacoes').doc(), {
-                    tipo, valor, descricao, data: dt, categoria,
-                    status: i === 0 ? status : 'pendente',
-                    tipoLancamento: tipoLanc,
-                    qtdParcelas: tipoLanc === 'parcelado' ? qtd : null,
-                    parcelaAtual: tipoLanc === 'parcelado' ? `${i+1}/${qtd}` : null,
-                    grupoId: novoGrupo,
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                });
+
+            // Se já era FIXA/PARCELADA
+            if (tipoOriginal !== 'unico') {
+                if (!modo) {
+                    // GUARDA OS DADOS CERTINHO ANTES DE ABRIR O POPUP
+                    dadosTemp = { 
+                        tipoLanc, tipo, valor, descricao, dataBase, 
+                        categoria, status, qtd, grupoId, idEdicao 
+                    };
+                    fecharModal();
+                    document.getElementById('modalOpcoesAtualizar').classList.remove('hidden');
+                    return;
+                }
+
+                await executarAtualizacao(modo);
+                document.getElementById('modoAtualizacao').value = '';
+                fecharModalOpcoesAtualizar();
+                fecharModal();
+                return;
             }
-            await lote.commit();
         }
 
+        // NOVO cadastro
+        const lote = db.batch();
+        const novoGrupo = gerarGrupoId();
+        for (let i = 0; i < qtd; i++) {
+            const dt = somarMes(dataBase, i);
+            lote.set(db.collection('transacoes').doc(), {
+                tipo, valor, descricao, data: dt, categoria,
+                status: i === 0 ? status : 'pendente',
+                tipoLancamento: tipoLanc,
+                qtdParcelas: tipoLanc === 'parcelado' ? qtd : null,
+                parcelaAtual: tipoLanc === 'parcelado' ? `${i+1}/${qtd}` : null,
+                grupoId: novoGrupo,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+        }
+        await lote.commit();
         fecharModal();
+
     } catch (erro) {
-        console.error("ERRO FIREBASE:", erro);
-        alert("Erro: " + erro.message + "\nTente novamente, está tudo configurado certo.");
+        console.error("ERRO:", erro);
+        alert("Erro ao salvar: " + erro.message);
     }
 }
 
 // ==============================================
-// ✅ EXCLUSÃO SIMPLES
+// ✅ EXECUTA ATUALIZAÇÃO - COM VERIFICAÇÃO DE SEGURANÇA
+// ==============================================
+async function executarAtualizacao(modo) {
+    // SE NÃO TIVER DADOS, NÃO FAZ NADA (EVITA O ERRO)
+    if (!dadosTemp || Object.keys(dadosTemp).length === 0) return;
+
+    const { tipo, valor, descricao, dataBase, categoria, status, grupoId, idEdicao } = dadosTemp;
+
+    if (modo === 'apenasEsta') {
+        await db.collection('transacoes').doc(idEdicao).update({
+            tipo, valor, descricao, data: dataBase, categoria, status
+        });
+    } else if (modo === 'estaEFuturas') {
+        const trans = listaTransacoesGlobal.find(t => t.id === idEdicao);
+        const atualizar = listaTransacoesGlobal.filter(t => t.grupoId === grupoId && t.data >= trans.data);
+        const lote = db.batch();
+        atualizar.forEach(t => lote.update(db.collection('transacoes').doc(t.id), { tipo, valor, descricao, categoria, status }));
+        await lote.commit();
+    } else if (modo === 'todas') {
+        const atualizar = listaTransacoesGlobal.filter(t => t.grupoId === grupoId);
+        const lote = db.batch();
+        atualizar.forEach(t => lote.update(db.collection('transacoes').doc(t.id), { tipo, valor, descricao, categoria, status }));
+        await lote.commit();
+    }
+}
+
+function atualizarApenasEsta() { document.getElementById('modoAtualizacao').value = 'apenasEsta'; salvarTransacao(new Event('submit')); }
+function atualizarEFuturas() { document.getElementById('modoAtualizacao').value = 'estaEFuturas'; salvarTransacao(new Event('submit')); }
+function atualizarTodasGrupo() { document.getElementById('modoAtualizacao').value = 'todas'; salvarTransacao(new Event('submit')); }
+
+// ==============================================
+// ✅ EXCLUSÃO
 // ==============================================
 function abrirOpcoesExclusao() { fecharModal(); document.getElementById('modalExcluir').classList.remove('hidden'); }
 
 async function excluirApenasEsta() {
     const id = document.getElementById('idEdicao').value;
-    try { await db.collection('transacoes').doc(id).delete(); } catch(e) { console.log(e); }
+    try { await db.collection('transacoes').doc(id).delete(); } catch(e) {}
     fecharModalExcluir();
 }
 
@@ -528,19 +601,22 @@ async function excluirTodasGrupo() {
 }
 
 // ==============================================
-// ✅ CARREGAR DADOS DO FIREBASE
+// ✅ CARREGAR DADOS E ORDENAR POR DATA
 // ==============================================
 db.collection('transacoes')
     .orderBy('createdAt', 'desc')
     .limit(500)
     .onSnapshot(snap => {
         listaTransacoesGlobal = [];
-        snap.forEach(doc => {
-            listaTransacoesGlobal.push({ id: doc.id, ...doc.data() });
+        snap.forEach(doc => listaTransacoesGlobal.push({ id: doc.id, ...doc.data() }));
+        
+        listaTransacoesGlobal.sort((a, b) => {
+            const [dA, mA, aA] = a.data.split('/').map(Number);
+            const [dB, mB, aB] = b.data.split('/').map(Number);
+            return new Date(aB, mB-1, dB) - new Date(aA, mA-1, dA);
         });
+
         filtrarTransacoesPorMes();
-    }, erro => {
-        console.error("ERRO AO LER DADOS:", erro);
     });
 
 // ==============================================
@@ -596,6 +672,7 @@ function atualizarLista(lista) {
 
 document.getElementById('modalTransacao').addEventListener('click', e=>e.target.id==='modalTransacao'&&fecharModal());
 document.getElementById('modalExcluir').addEventListener('click', e=>e.target.id==='modalExcluir'&&fecharModalExcluir());
+document.getElementById('modalOpcoesAtualizar').addEventListener('click', e=>e.target.id==='modalOpcoesAtualizar'&&fecharModalOpcoesAtualizar());
 document.getElementById('modalWhatsapp').addEventListener('click', e=>e.target.id==='modalWhatsapp'&&fecharModalWhatsapp());
 
 atualizarNomeMes();
