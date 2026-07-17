@@ -4,10 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
-    <!-- ✅ BARRA DE STATUS AZUL -->
+    <!-- ✅ CONFIGURAÇÃO COMPLETA PARA BARRA AZUL NO IPHONE -->
     <meta name="theme-color" content="#2563EB">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <!-- ESSE É O PRINCIPAL PARA FICAR AZUL NO IOS -->
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="Minhas Finanças">
     
     <title>Controle Financeiro</title>
@@ -46,7 +47,14 @@
             .no-select { -webkit-user-select: none; user-select: none; }
             .scrollbar-hide::-webkit-scrollbar { display: none; }
         }
-        html, body { overscroll-behavior: none; touch-action: pan-x pan-y; height: 100%; padding-top: env(safe-area-inset-top); }
+        html, body { 
+            overscroll-behavior: none; 
+            touch-action: pan-x pan-y; 
+            height: 100%; 
+            /* Ajusta o espaço do topo no iPhone */
+            padding-top: env(safe-area-inset-top);
+            background-color: #2563EB;
+        }
 
         .campo-data-wrapper { position: relative; }
         .campo-data-wrapper input[type="date"] {
@@ -126,139 +134,139 @@
                 <div class="text-center text-gray-400 py-6"><i class="fa fa-list-alt text-2xl mb-1"></i><p class="text-sm">Nenhuma transação cadastrada</p></div>
             </div>
         </div>
+    </div>
 
-        <!-- MODAIS -->
-        <div id="modalOpcoesAtualizar" class="fixed inset-0 bg-black/60 flex items-center justify-center z-50 hidden">
-            <div class="bg-white rounded-2xl w-full max-w-sm p-5 mx-4">
-                <h3 class="text-lg font-bold mb-4 text-center">O que deseja atualizar?</h3>
-                <div class="space-y-2">
-                    <button onclick="atualizarApenasEsta()" class="w-full text-left p-3 border border-gray-200 rounded-lg hover:bg-gray-50">
-                        <i class="fa fa-file-text-o mr-2"></i> Apenas esta transação
-                    </button>
-                    <button onclick="atualizarEFuturas()" class="w-full text-left p-3 border border-gray-200 rounded-lg hover:bg-gray-50">
-                        <i class="fa fa-calendar-o mr-2"></i> Esta e as futuras
-                    </button>
-                    <button onclick="atualizarTodasGrupo()" class="w-full text-left p-3 border border-primary/30 text-primary rounded-lg hover:bg-primary/5">
-                        <i class="fa fa-refresh mr-2"></i> Todas do grupo
-                    </button>
-                </div>
-                <button onclick="fecharModalOpcoesAtualizar()" class="w-full mt-4 p-2 text-gray-500 hover:text-gray-700">Cancelar</button>
+    <!-- RESTO DO CÓDIGO (MODAIS, FIREBASE, FUNÇÕES) PERMANECE EXATAMENTE IGUAL -->
+    <div id="modalOpcoesAtualizar" class="fixed inset-0 bg-black/60 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-2xl w-full max-w-sm p-5 mx-4">
+            <h3 class="text-lg font-bold mb-4 text-center">O que deseja atualizar?</h3>
+            <div class="space-y-2">
+                <button onclick="atualizarApenasEsta()" class="w-full text-left p-3 border border-gray-200 rounded-lg hover:bg-gray-50">
+                    <i class="fa fa-file-text-o mr-2"></i> Apenas esta transação
+                </button>
+                <button onclick="atualizarEFuturas()" class="w-full text-left p-3 border border-gray-200 rounded-lg hover:bg-gray-50">
+                    <i class="fa fa-calendar-o mr-2"></i> Esta e as futuras
+                </button>
+                <button onclick="atualizarTodasGrupo()" class="w-full text-left p-3 border border-primary/30 text-primary rounded-lg hover:bg-primary/5">
+                    <i class="fa fa-refresh mr-2"></i> Todas do grupo
+                </button>
             </div>
+            <button onclick="fecharModalOpcoesAtualizar()" class="w-full mt-4 p-2 text-gray-500 hover:text-gray-700">Cancelar</button>
         </div>
+    </div>
 
-        <div id="modalTransacao" class="fixed inset-0 bg-black/60 flex items-end justify-center z-50 hidden">
-            <div class="bg-white rounded-t-3xl w-full max-w-md p-5">
-                <div class="flex justify-between items-center mb-4">
-                    <h3 id="tituloModal" class="text-lg font-bold">Nova Transação</h3>
-                    <button onclick="fecharModal()" class="text-gray-500 text-lg"><i class="fa fa-times"></i></button>
-                </div>
-                <form id="formTransacao" onsubmit="salvarTransacao(event)">
-                    <input type="hidden" id="tipoTransacao" value="">
-                    <input type="hidden" id="idEdicao" value="">
-                    <input type="hidden" id="grupoId" value="">
-                    <input type="hidden" id="modoAtualizacao" value="">
-
-                    <div class="mb-3">
-                        <label class="block text-sm font-medium text-gray-600 mb-1">Valor (R$)</label>
-                        <input type="text" id="valor" class="w-full border border-gray-200 rounded-lg p-2.5 focus:outline-none focus:ring-2 focus:ring-primary/40" placeholder="0,00" required oninput="mascaraValor(this)">
-                    </div>
-                    <div class="mb-3">
-                        <label class="block text-sm font-medium text-gray-600 mb-1">Descrição</label>
-                        <input type="text" id="descricao" class="w-full border border-gray-200 rounded-lg p-2.5 focus:outline-none focus:ring-2 focus:ring-primary/40" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="block text-sm font-medium text-gray-600 mb-1">Data</label>
-                        <div class="campo-data-wrapper w-full border border-gray-200 rounded-lg p-2.5 focus-within:ring-2 focus-within:ring-primary/40 relative">
-                            <div id="dataVisual" class="data-visual">Selecione uma data</div>
-                            <input type="date" id="data" required onchange="atualizarDataVisual(this)">
-                            <i class="fa fa-calendar absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"></i>
-                        </div>
-                    </div>
-                    <div class="mb-3">
-                        <label class="block text-sm font-medium text-gray-600 mb-1">Categoria</label>
-                        <select id="categoria" class="w-full border border-gray-200 rounded-lg p-2.5 focus:outline-none focus:ring-2 focus:ring-primary/40" required>
-                            <option value="">Selecione</option>
-                        </select>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="block text-sm font-medium text-gray-600 mb-1.5">Tipo de Lançamento</label>
-                        <div class="grid grid-cols-2 gap-2 mb-2.5">
-                            <label class="flex items-center justify-center gap-1 border border-primary text-primary rounded-lg p-2 cursor-pointer hover:bg-primary/5 transition has-[:checked]:bg-primary has-[:checked]:text-white">
-                                <input type="radio" name="tipoLancamento" value="parcelado" class="hidden" onclick="mostrarCampoParcelas()">
-                                <i class="fa fa-calendar"></i> Parc.
-                            </label>
-                            <label class="flex items-center justify-center gap-1 border border-primary text-primary rounded-lg p-2 cursor-pointer hover:bg-primary/5 transition has-[:checked]:bg-primary has-[:checked]:text-white">
-                                <input type="radio" name="tipoLancamento" value="fixo" class="hidden" onclick="mostrarCampoParcelas()">
-                                <i class="fa fa-refresh"></i> Fixo
-                            </label>
-                        </div>
-                        <div id="campoParcelas" class="mt-2 hidden">
-                            <label class="block text-sm font-medium text-gray-600 mb-1">Quantidade de Parcelas</label>
-                            <input type="number" id="qtdParcelas" min="2" max="99" class="w-full border border-gray-200 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-primary/40" placeholder="Ex: 3">
-                        </div>
-                    </div>
-
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium text-gray-600 mb-1.5">Status</label>
-                        <div class="grid grid-cols-2 gap-2.5">
-                            <label class="flex items-center justify-center gap-1.5 border border-success text-success rounded-lg p-2.5 cursor-pointer hover:bg-success/5 transition has-[:checked]:bg-success has-[:checked]:text-white">
-                                <input type="radio" name="statusPagamento" value="pago" class="hidden" checked>
-                                <i class="fa fa-check-circle"></i> <span id="textoStatus">Recebida</span>
-                            </label>
-                            <label class="flex items-center justify-center gap-1.5 border border-warning text-warning rounded-lg p-2.5 cursor-pointer hover:bg-warning/5 transition has-[:checked]:bg-warning has-[:checked]:text-white">
-                                <input type="radio" name="statusPagamento" value="pendente" class="hidden">
-                                <i class="fa fa-clock-o"></i> <span id="textoStatusPendente">A Receber</span>
-                            </label>
-                        </div>
-                    </div>
-
-                    <div class="flex gap-2.5">
-                        <button type="button" id="btnExcluir" onclick="abrirOpcoesExclusao()" class="hidden bg-danger/10 text-danger hover:bg-danger/20 font-medium rounded-lg p-2.5 transition">
-                            <i class="fa fa-trash"></i>
-                        </button>
-                        <button type="submit" id="btnSalvar" class="flex-1 bg-primary hover:bg-primary/90 text-white font-medium rounded-lg p-2.5 transition">Salvar Transação</button>
-                    </div>
-                </form>
+    <div id="modalTransacao" class="fixed inset-0 bg-black/60 flex items-end justify-center z-50 hidden">
+        <div class="bg-white rounded-t-3xl w-full max-w-md p-5">
+            <div class="flex justify-between items-center mb-4">
+                <h3 id="tituloModal" class="text-lg font-bold">Nova Transação</h3>
+                <button onclick="fecharModal()" class="text-gray-500 text-lg"><i class="fa fa-times"></i></button>
             </div>
+            <form id="formTransacao" onsubmit="salvarTransacao(event)">
+                <input type="hidden" id="tipoTransacao" value="">
+                <input type="hidden" id="idEdicao" value="">
+                <input type="hidden" id="grupoId" value="">
+                <input type="hidden" id="modoAtualizacao" value="">
+
+                <div class="mb-3">
+                    <label class="block text-sm font-medium text-gray-600 mb-1">Valor (R$)</label>
+                    <input type="text" id="valor" class="w-full border border-gray-200 rounded-lg p-2.5 focus:outline-none focus:ring-2 focus:ring-primary/40" placeholder="0,00" required oninput="mascaraValor(this)">
+                </div>
+                <div class="mb-3">
+                    <label class="block text-sm font-medium text-gray-600 mb-1">Descrição</label>
+                    <input type="text" id="descricao" class="w-full border border-gray-200 rounded-lg p-2.5 focus:outline-none focus:ring-2 focus:ring-primary/40" required>
+                </div>
+                <div class="mb-3">
+                    <label class="block text-sm font-medium text-gray-600 mb-1">Data</label>
+                    <div class="campo-data-wrapper w-full border border-gray-200 rounded-lg p-2.5 focus-within:ring-2 focus-within:ring-primary/40 relative">
+                        <div id="dataVisual" class="data-visual">Selecione uma data</div>
+                        <input type="date" id="data" required onchange="atualizarDataVisual(this)">
+                        <i class="fa fa-calendar absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"></i>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="block text-sm font-medium text-gray-600 mb-1">Categoria</label>
+                    <select id="categoria" class="w-full border border-gray-200 rounded-lg p-2.5 focus:outline-none focus:ring-2 focus:ring-primary/40" required>
+                        <option value="">Selecione</option>
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label class="block text-sm font-medium text-gray-600 mb-1.5">Tipo de Lançamento</label>
+                    <div class="grid grid-cols-2 gap-2 mb-2.5">
+                        <label class="flex items-center justify-center gap-1 border border-primary text-primary rounded-lg p-2 cursor-pointer hover:bg-primary/5 transition has-[:checked]:bg-primary has-[:checked]:text-white">
+                            <input type="radio" name="tipoLancamento" value="parcelado" class="hidden" onclick="mostrarCampoParcelas()">
+                            <i class="fa fa-calendar"></i> Parc.
+                        </label>
+                        <label class="flex items-center justify-center gap-1 border border-primary text-primary rounded-lg p-2 cursor-pointer hover:bg-primary/5 transition has-[:checked]:bg-primary has-[:checked]:text-white">
+                            <input type="radio" name="tipoLancamento" value="fixo" class="hidden" onclick="mostrarCampoParcelas()">
+                            <i class="fa fa-refresh"></i> Fixo
+                        </label>
+                    </div>
+                    <div id="campoParcelas" class="mt-2 hidden">
+                        <label class="block text-sm font-medium text-gray-600 mb-1">Quantidade de Parcelas</label>
+                        <input type="number" id="qtdParcelas" min="2" max="99" class="w-full border border-gray-200 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-primary/40" placeholder="Ex: 3">
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-600 mb-1.5">Status</label>
+                    <div class="grid grid-cols-2 gap-2.5">
+                        <label class="flex items-center justify-center gap-1.5 border border-success text-success rounded-lg p-2.5 cursor-pointer hover:bg-success/5 transition has-[:checked]:bg-success has-[:checked]:text-white">
+                            <input type="radio" name="statusPagamento" value="pago" class="hidden" checked>
+                            <i class="fa fa-check-circle"></i> <span id="textoStatus">Recebida</span>
+                        </label>
+                        <label class="flex items-center justify-center gap-1.5 border border-warning text-warning rounded-lg p-2.5 cursor-pointer hover:bg-warning/5 transition has-[:checked]:bg-warning has-[:checked]:text-white">
+                            <input type="radio" name="statusPagamento" value="pendente" class="hidden">
+                            <i class="fa fa-clock-o"></i> <span id="textoStatusPendente">A Receber</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="flex gap-2.5">
+                    <button type="button" id="btnExcluir" onclick="abrirOpcoesExclusao()" class="hidden bg-danger/10 text-danger hover:bg-danger/20 font-medium rounded-lg p-2.5 transition">
+                        <i class="fa fa-trash"></i>
+                    </button>
+                    <button type="submit" id="btnSalvar" class="flex-1 bg-primary hover:bg-primary/90 text-white font-medium rounded-lg p-2.5 transition">Salvar Transação</button>
+                </div>
+            </form>
         </div>
+    </div>
 
-        <div id="modalExcluir" class="fixed inset-0 bg-black/60 flex items-center justify-center z-50 hidden">
-            <div class="bg-white rounded-2xl w-full max-w-sm p-5 mx-4">
-                <h3 class="text-lg font-bold mb-4 text-center">O que deseja excluir?</h3>
-                <div class="space-y-2">
-                    <button onclick="excluirApenasEsta()" class="w-full text-left p-3 border border-gray-200 rounded-lg hover:bg-gray-50">
-                        <i class="fa fa-file-text-o mr-2"></i> Apenas esta
-                    </button>
-                    <button onclick="excluirEFuturas()" class="w-full text-left p-3 border border-gray-200 rounded-lg hover:bg-gray-50">
-                        <i class="fa fa-calendar-o mr-2"></i> Esta e futuras
-                    </button>
-                    <button onclick="excluirTodasGrupo()" class="w-full text-left p-3 border border-danger/30 text-danger rounded-lg hover:bg-danger/5">
-                        <i class="fa fa-trash mr-2"></i> Todas
-                    </button>
-                </div>
-                <button onclick="fecharModalExcluir()" class="w-full mt-4 p-2 text-gray-500 hover:text-gray-700">Cancelar</button>
+    <div id="modalExcluir" class="fixed inset-0 bg-black/60 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-2xl w-full max-w-sm p-5 mx-4">
+            <h3 class="text-lg font-bold mb-4 text-center">O que deseja excluir?</h3>
+            <div class="space-y-2">
+                <button onclick="excluirApenasEsta()" class="w-full text-left p-3 border border-gray-200 rounded-lg hover:bg-gray-50">
+                    <i class="fa fa-file-text-o mr-2"></i> Apenas esta
+                </button>
+                <button onclick="excluirEFuturas()" class="w-full text-left p-3 border border-gray-200 rounded-lg hover:bg-gray-50">
+                    <i class="fa fa-calendar-o mr-2"></i> Esta e futuras
+                </button>
+                <button onclick="excluirTodasGrupo()" class="w-full text-left p-3 border border-danger/30 text-danger rounded-lg hover:bg-danger/5">
+                    <i class="fa fa-trash mr-2"></i> Todas
+                </button>
             </div>
+            <button onclick="fecharModalExcluir()" class="w-full mt-4 p-2 text-gray-500 hover:text-gray-700">Cancelar</button>
         </div>
+    </div>
 
-        <div id="modalWhatsapp" class="fixed inset-0 bg-black/60 flex items-end justify-center z-50 hidden">
-            <div class="bg-white rounded-t-3xl w-full max-w-md p-5">
-                <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-lg font-bold flex items-center gap-2"><i class="fa fa-whatsapp text-whatsapp"></i> Gastos via WhatsApp</h3>
-                    <button onclick="fecharModalWhatsapp()" class="text-gray-500 text-lg"><i class="fa fa-times"></i></button>
-                </div>
-                <div class="space-y-3 text-gray-600 text-sm">
-                    <p>Envie mensagens para o seu número cadastrado e elas cairão automaticamente aqui!</p>
-                    <div class="bg-light p-3.5 rounded-xl">
-                        <p class="font-medium text-dark mb-1.5">📝 Como enviar:</p>
-                        <ul class="space-y-1">
-                            <li>• <code class="bg-white px-1.5 rounded">50,90 padaria</code> → Despesa</li>
-                            <li>• <code class="bg-white px-1.5 rounded">+150 salário</code> → Receita</li>
-                        </ul>
-                    </div>
-                </div>
-                <button onclick="fecharModalWhatsapp()" class="w-full bg-whatsapp hover:bg-whatsapp/90 text-white font-medium rounded-lg p-3 mt-5 transition">Entendi</button>
+    <div id="modalWhatsapp" class="fixed inset-0 bg-black/60 flex items-end justify-center z-50 hidden">
+        <div class="bg-white rounded-t-3xl w-full max-w-md p-5">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold flex items-center gap-2"><i class="fa fa-whatsapp text-whatsapp"></i> Gastos via WhatsApp</h3>
+                <button onclick="fecharModalWhatsapp()" class="text-gray-500 text-lg"><i class="fa fa-times"></i></button>
             </div>
+            <div class="space-y-3 text-gray-600 text-sm">
+                <p>Envie mensagens para o seu número cadastrado e elas cairão automaticamente aqui!</p>
+                <div class="bg-light p-3.5 rounded-xl">
+                    <p class="font-medium text-dark mb-1.5">📝 Como enviar:</p>
+                    <ul class="space-y-1">
+                        <li>• <code class="bg-white px-1.5 rounded">50,90 padaria</code> → Despesa</li>
+                        <li>• <code class="bg-white px-1.5 rounded">+150 salário</code> → Receita</li>
+                    </ul>
+                </div>
+            </div>
+            <button onclick="fecharModalWhatsapp()" class="w-full bg-whatsapp hover:bg-whatsapp/90 text-white font-medium rounded-lg p-3 mt-5 transition">Entendi</button>
         </div>
     </div>
 
