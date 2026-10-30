@@ -283,6 +283,27 @@ const firebaseConfig = {
 const app = firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
+const auth = firebase.auth();
+
+let usuarioFirebase = null;
+
+async function autenticarFirebase() {
+    try {
+        const resultado = await auth.signInAnonymously();
+
+        usuarioFirebase = resultado.user;
+
+        console.log("UID Firebase:", usuarioFirebase.uid);
+
+        return usuarioFirebase.uid;
+
+    } catch (erro) {
+        console.error("Erro no login:", erro);
+        alert("Erro na autenticação: " + erro.message);
+        throw erro;
+    }
+}
+
 const categorias = {
     receita: ['Salário', 'Vendas', 'Investimentos', 'Outros'],
     despesa: ['Alimentação', 'Moradia', 'Transporte', 'Lazer', 'Saúde', 'Educação', 'Outros']
